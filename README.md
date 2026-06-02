@@ -42,3 +42,16 @@ venv\Scripts\activate
 
 # On macOS/Linux:
 source venv/bin/activate
+
+pip install -r requirements.txt
+
+# Run the application server
+python main.py
+cd ../frontend
+npm install
+npm run dev
+├── backend/            # Python metric calculations, parsing scripts, and scraping routing logic
+├── frontend/           # Next.js pages, responsive Tailwind CSS grid layouts, and Recharts view layers
+├── .gitignore          # Environment variables and node_modules blocking rules
+├── package.json        # Main project HTML/JS manifest config script tracking
+└── render.yaml         # Cloud deployment specifications for hosting environments
