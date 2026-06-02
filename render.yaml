@@ -1,0 +1,33 @@
+services:
+  # 1. FastAPI Python Backend Service
+  - type: web
+    name: instagram-account-audit-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: APIFY_API_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+  # 2. Next.js Frontend Service
+  - type: web
+    name: premium-dashboard
+    runtime: node
+    rootDir: premium-dashboard
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.x
+      - key: FASTAPI_URL
+        fromService:
+          name: instagram-account-audit-api
+          property: hostport

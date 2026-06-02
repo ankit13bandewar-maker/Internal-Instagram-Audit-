@@ -1,0 +1,9 @@
+{
+  "name": "client-audit-root",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "api": "cd backend && uvicorn main:app --reload --port 8000 --host 0.0.0.0",
+    "dev": "npx concurrently \"npm run api\" \"npm --prefix frontend run dev\""
+  }
+}

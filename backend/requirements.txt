@@ -1,0 +1,20 @@
+# streamlit
+# apify-client
+# requests
+# plotly
+# python-dotenv
+# google-genai
+# pandas
+# fastapi
+# uvicorn
+# plotly>=5.0.0
+
+
+httpx>=0.24,<0.26
+fastapi==0.110.0
+uvicorn==0.28.0
+pandas>=2.2.3
+google-generativeai==0.4.1
+apify-client==1.7.0
+apify-shared==1.1.1
+python-dotenv==1.0.1
