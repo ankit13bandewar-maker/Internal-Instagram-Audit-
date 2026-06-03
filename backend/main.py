@@ -317,24 +317,44 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                     raise ValueError("No Gemini key")
                 gemini_key = gemini_key.strip()
                 
-                prompt = f"Given the Instagram handle @{target_handle}, first identify their core niche and specific regional/demographic market (e.g., Indian Astrology, US Fitness, UK Food). Then, list 5 direct or related competitor Instagram accounts that target the EXACT SAME regional market and niche. Return ONLY a comma-separated list of their exact Instagram handles (no @ symbols, no spaces, no other text). For example: apple,microsoft,google,samsung,sony"
+                prompt = f"Given the Instagram handle @{target_handle}, first identify their core niche and specific regional/demographic market (e.g., Indian Astrology, US Fitness, UK Food). Then, list 7 direct or related competitor Instagram accounts that target the EXACT SAME regional market and niche. Return ONLY a comma-separated list of their exact Instagram handles (no @ symbols, no spaces, no other text). For example: apple,microsoft,google,samsung,sony,hp,dell"
                 
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-                payload = {
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.2}
-                }
-                import time
-                max_retries = 3
-                for attempt in range(max_retries):
-                    resp = requests.post(url, json=payload, timeout=15)
-                    if resp.status_code == 429:
-                        print(f"Gemini API rate limited. Retrying in {attempt + 2} seconds...")
-                        time.sleep(attempt + 2)
-                        continue
-                    break
-
-                if not resp.ok:
+                # Dynamic model rotation for maximum reliability and rate-limit resilience
+                models = [
+                    "gemini-3.5-flash",
+                    "gemini-flash-latest",
+                    "gemini-2.5-flash-lite",
+                    "gemini-3.1-flash-lite",
+                    "gemini-2.0-flash",
+                    "gemini-2.5-flash",
+                    "gemini-2.5-pro"
+                ]
+                text = ""
+                success = False
+                
+                for model in models:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+                    payload = {
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"temperature": 0.2}
+                    }
+                    import time
+                    for attempt in range(2):
+                        resp = requests.post(url, json=payload, timeout=15)
+                        if resp.status_code == 429:
+                            print(f"DEBUG: Gemini model {model} rate limited. Retrying in {attempt + 1}s...")
+                            time.sleep(attempt + 1)
+                            continue
+                        elif resp.ok:
+                            text = resp.json().get("candidates", [])[0].get("content", {}).get("parts", [])[0].get("text", "")
+                            success = True
+                            break
+                        else:
+                            break
+                    if success:
+                        break
+                
+                if not success:
                     openrouter_key = os.getenv("OPENROUTER_API_KEY")
                     if openrouter_key:
                         or_url = "https://openrouter.ai/api/v1/chat/completions"
@@ -348,13 +368,11 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                         or_resp.raise_for_status()
                         text = or_resp.json()["choices"][0]["message"]["content"]
                     else:
-                        resp.raise_for_status()
-                else:
-                    text = resp.json().get("candidates", [])[0].get("content", {}).get("parts", [])[0].get("text", "")
-                    
+                        raise RuntimeError("All direct Gemini models failed and OpenRouter is not configured.")
+                        
                 handles = [h.strip().lower() for h in text.replace("@", "").split(",") if h.strip()]
                 if len(handles) >= 3:
-                    return [h for h in handles if h != target_handle.lower()][:5]
+                    return [h for h in handles if h != target_handle.lower()][:7]
             except Exception as e:
                 print(f"DEBUG: Dynamic competitors failed ({e}). Using niche fallback map.")
                 pass
@@ -366,6 +384,10 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             sports_competitors = ["rohitsharma45", "mahi7781", "cristiano", "leomessi", "hardikpandya93"]
             entertainment_competitors = ["priyankachopra", "katrinakaif", "aliaabhatt", "deepikapadukone", "iamsrk"]
             fashion_competitors = ["hudabeauty", "kyliejenner", "kimkardashian", "gigihadid", "chiaraferragni"]
+            travel_competitors = ["beautifuldestinations", "natgeotravel", "travelandleisure", "lonelyplanet", "cntraveler"]
+            art_competitors = ["artofvisuals", "designboom", "juxtapozmag", "creativeboom", "itsnicethat"]
+            business_competitors = ["entrepreneur", "forbes", "businessinsider", "bloombergbusiness", "wallstreetjournal"]
+            education_competitors = ["sciencechannel", "neildegrassetyson", "billnye", "physicstoday", "scientific_american"]
             general_creators = ["mrbeast", "khaby00", "charliamelio", "addisonraee", "zachking"]
             
             if "astro" in th or "zodiac" in th or "pandit" in th or "acharya" in th or "baba" in th or "guru" in th or "vedic" in th:
@@ -376,6 +398,14 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 return [c for c in entertainment_competitors if c.lower() != th][:5]
             elif any(k in th for k in ["fashion", "beauty", "makeup", "style", "wear", "look", "glam", "dress", "design"]):
                 return [c for c in fashion_competitors if c.lower() != th][:5]
+            elif any(k in th for k in ["travel", "tour", "explore", "wild", "photo", "pic", "cam", "lens"]):
+                return [c for c in travel_competitors if c.lower() != th][:5]
+            elif any(k in th for k in ["art", "draw", "paint", "sketch", "design", "illustr", "creativ"]):
+                return [c for c in art_competitors if c.lower() != th][:5]
+            elif any(k in th for k in ["biz", "money", "market", "finance", "sell", "trade", "invest", "wealth"]):
+                return [c for c in business_competitors if c.lower() != th][:5]
+            elif any(k in th for k in ["edu", "learn", "science", "fact", "know", "study", "teach", "math", "physic"]):
+                return [c for c in education_competitors if c.lower() != th][:5]
             elif "tech" in th or "code" in th or "dev" in th:
                 return ["mkbhd", "wired", "techcrunch", "engadget", "theverge"]
             elif "fit" in th or "gym" in th or "workout" in th:
@@ -390,9 +420,9 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
         competitor_handles = get_dynamic_competitors(handle)
         competitor_metrics_list = []
 
-
         def fetch_competitor(comp_handle, rank):
             comp_url = f"https://www.instagram.com/{comp_handle}"
+            is_mock = False
             try:
                 comp_posts = scrape_latest_15_posts(comp_url)
                 # Filter out metadata/profile items
@@ -406,11 +436,16 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
 
             # If scraping returned nothing or failed, generate highly authentic fallback posts
             if not comp_posts:
+                is_mock = True
                 try:
                     comp_posts = _generate_highly_authentic_posts(comp_url)
                 except Exception as fallback_e:
                     print(f"Fallback generation failed for {comp_handle}: {fallback_e}")
                     comp_posts = []
+
+            # Check if any post is mock
+            if any(p.get("is_mock") for p in comp_posts):
+                is_mock = True
 
             try:
                 std_posts = []
@@ -438,7 +473,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
                     "metrics": metrics,
-                    "follower_count": comp_follower_count
+                    "follower_count": comp_follower_count,
+                    "is_mock": is_mock
                 }
             except Exception as e:
                 print(f"Competitor packaging failed for {comp_handle}: {e}")
@@ -446,7 +482,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
                     "metrics": calculate_metrics_package([], 1),
-                    "follower_count": 0
+                    "follower_count": 0,
+                    "is_mock": True
                 }
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -454,7 +491,22 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             for future in concurrent.futures.as_completed(futures):
                 competitor_metrics_list.append(future.result())
                 
-        competitor_metrics_list = sorted(competitor_metrics_list, key=lambda x: x["rank"])
+        # Filter and prioritize real competitors
+        real_comps = [c for c in competitor_metrics_list if not c.get("is_mock")]
+        mock_comps = [c for c in competitor_metrics_list if c.get("is_mock")]
+        
+        # Sort each list by original rank
+        real_comps = sorted(real_comps, key=lambda x: x["rank"])
+        mock_comps = sorted(mock_comps, key=lambda x: x["rank"])
+        
+        # Combine them, taking all real ones first, then mock ones if we have fewer than 5
+        final_comps = (real_comps + mock_comps)[:5]
+        
+        # Re-assign ranks 1 through 5 for the combined final list
+        for idx, comp in enumerate(final_comps, 1):
+            comp["rank"] = idx
+            
+        competitor_metrics_list = final_comps
 
         # Reels vs Static Performance Split
         reels_data = {"count": 0, "likes": 0, "comments": 0, "posts": []}

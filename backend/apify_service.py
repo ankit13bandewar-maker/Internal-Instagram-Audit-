@@ -390,8 +390,78 @@ def _generate_highly_authentic_posts(profile_url: str) -> list:
             "url": f"https://www.instagram.com/p/{shortcode}/",
             "shortcode": shortcode,
             "videoPlayCount": video_play_count,
-            "productType": product_type
+            "productType": product_type,
+            "is_mock": True
         })
+    return posts
+
+
+
+def _scrape_via_instagram_api(profile_url: str) -> list:
+    """
+    Scrape latest 12 posts from Instagram's public web_profile_info API.
+    Does not require Apify client/actor execution. Fast, free, real data.
+    """
+    username = _extract_username(profile_url)
+    url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
+    headers = {
+        'x-ig-app-id': '936619743392459',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    import requests
+    import datetime
+    
+    print(f"[IG API] Scraping via public API for '{username}'...")
+    r = requests.get(url, headers=headers, timeout=10)
+    if r.status_code != 200:
+        raise RuntimeError(f"IG API failed with status {r.status_code}")
+    
+    data = r.json()
+    user = data.get('data', {}).get('user', {})
+    if not user:
+        raise ValueError("No user found in IG API response")
+        
+    edges = user.get('edge_owner_to_timeline_media', {}).get('edges', [])
+    posts = []
+    for edge in edges:
+        node = edge.get('node', {})
+        shortcode = node.get("shortcode")
+        if not shortcode:
+            continue
+        timestamp = node.get("taken_at_timestamp")
+        
+        # Use timezone-aware representation of UTC to avoid deprecation warnings
+        try:
+            timestamp_str = datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+        except Exception:
+            try:
+                timestamp_str = datetime.datetime.fromtimestamp(timestamp, datetime.UTC).isoformat().replace("+00:00", "Z")
+            except Exception:
+                timestamp_str = datetime.datetime.utcfromtimestamp(timestamp).isoformat() + "Z"
+            
+        caption = ""
+        caption_edges = node.get("edge_media_to_caption", {}).get("edges", [])
+        if caption_edges:
+            caption = caption_edges[0].get("node", {}).get("text", "")
+            
+        post_type = "Image"
+        if node.get("is_video"):
+            post_type = "Video"
+        if node.get("product_type") == "clips":
+            post_type = "clips"
+            
+        posts.append({
+            "likesCount": int(node.get("edge_liked_by", {}).get("count", 0)),
+            "commentsCount": int(node.get("edge_media_to_comment", {}).get("count", 0)),
+            "timestamp": timestamp_str,
+            "type": post_type,
+            "caption": caption,
+            "url": f"https://www.instagram.com/p/{shortcode}/",
+            "shortcode": shortcode,
+            "videoPlayCount": int(node.get("video_view_count") or 0),
+            "productType": node.get("product_type") or ""
+        })
+    print(f"[IG API] Successfully fetched {len(posts)} posts for '{username}'")
     return posts
 
 
@@ -400,13 +470,23 @@ def scrape_latest_15_posts(profile_url: str) -> list:
     Main entry point called by main.py.
 
     Flow:
-      1. Try to scrape live via Apify. If successful, save to cache and return.
-      2. If live scrape fails, fall back to local CSV cache.
-      3. If CSV cache fails or is empty, dynamically generate realistic, deterministic mock posts.
+      1. Try to scrape live via public Instagram web_profile_info API. Fast, free, real data.
+      2. If that fails (e.g. rate-limited/blocked), try to scrape live via Apify.
+      3. If live scrape fails, fall back to local CSV cache.
+      4. If CSV cache fails or is empty, dynamically generate realistic, deterministic mock posts.
     """
     username = _extract_username(profile_url)
 
-    # ── Step 1: Live Apify scrape ──
+    # ── Step 1: Instagram public API scrape (New, fast, real) ──
+    try:
+        posts = _scrape_via_instagram_api(profile_url)
+        if posts:
+            _save_to_csv(profile_url, posts)
+            return posts
+    except Exception as e:
+        print(f"[IG API Failed] for '{username}': {e}. Trying Apify...")
+
+    # ── Step 2: Live Apify scrape ──
     try:
         print(f"[Live] Fetching 15 posts fresh from Apify for '{username}'...")
         posts = _scrape_via_apify(profile_url)
@@ -416,7 +496,7 @@ def scrape_latest_15_posts(profile_url: str) -> list:
     except Exception as e:
         print(f"[Apify Live Failed] for '{username}': {e}. Trying CSV cache fallback...")
 
-    # ── Step 2: CSV cache fallback ──
+    # ── Step 3: CSV cache fallback ──
     try:
         posts = _load_csv_for_profile(username)
         if posts:
@@ -424,7 +504,7 @@ def scrape_latest_15_posts(profile_url: str) -> list:
     except Exception as e:
         print(f"[CSV Fallback Failed] for '{username}': {e}. Trying dynamic mock fallback...")
 
-    # ── Step 3: Dynamic authentic mock fallback ──
+    # ── Step 4: Dynamic authentic mock fallback ──
     print(f"[Fallback Dynamic] Generating deterministic high-fidelity metrics for '{username}'...")
     posts = _generate_highly_authentic_posts(profile_url)
-    return posts
+    return posts
