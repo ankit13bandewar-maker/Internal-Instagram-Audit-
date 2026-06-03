@@ -423,6 +423,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
         def fetch_competitor(comp_handle, rank):
             comp_url = f"https://www.instagram.com/{comp_handle}"
             is_mock = False
+            is_invalid = False
             try:
                 comp_posts = scrape_latest_15_posts(comp_url)
                 # Filter out metadata/profile items
@@ -430,12 +431,16 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                     p for p in comp_posts
                     if p.get("shortcode") and ("/p/" in p.get("url", "") or "/reel/" in p.get("url", "") or "/tv/" in p.get("url", ""))
                 ]
+            except FileNotFoundError:
+                print(f"Competitor '{comp_handle}' returned 404. Marking as invalid.")
+                is_invalid = True
+                comp_posts = []
             except Exception as e:
                 print(f"Competitor scrape failed for {comp_handle}: {e}. Generating authentic fallback.")
                 comp_posts = []
 
             # If scraping returned nothing or failed, generate highly authentic fallback posts
-            if not comp_posts:
+            if not comp_posts and not is_invalid:
                 is_mock = True
                 try:
                     comp_posts = _generate_highly_authentic_posts(comp_url)
@@ -446,6 +451,16 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             # Check if any post is mock
             if any(p.get("is_mock") for p in comp_posts):
                 is_mock = True
+
+            if is_invalid:
+                return {
+                    "competitor_name": f"@{comp_handle}",
+                    "rank": rank,
+                    "metrics": calculate_metrics_package([], 1),
+                    "follower_count": 0,
+                    "is_mock": True,
+                    "is_invalid": True
+                }
 
             try:
                 std_posts = []
@@ -469,6 +484,12 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 
                 comp_follower_count = get_real_follower_count(comp_handle, calculated_followers)
                 metrics = calculate_metrics_package(std_posts, comp_follower_count)
+                
+                # Dynamic fix for mock post URLs: redirect mock post URLs to the competitor's profile page
+                if is_mock:
+                    metrics["best_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
+                    metrics["worst_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
+                
                 return {
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
@@ -478,10 +499,13 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 }
             except Exception as e:
                 print(f"Competitor packaging failed for {comp_handle}: {e}")
+                metrics = calculate_metrics_package([], 1)
+                metrics["best_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
+                metrics["worst_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
                 return {
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
-                    "metrics": calculate_metrics_package([], 1),
+                    "metrics": metrics,
                     "follower_count": 0,
                     "is_mock": True
                 }
@@ -492,15 +516,30 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 competitor_metrics_list.append(future.result())
                 
         # Filter and prioritize real competitors
-        real_comps = [c for c in competitor_metrics_list if not c.get("is_mock")]
-        mock_comps = [c for c in competitor_metrics_list if c.get("is_mock")]
+        real_comps = [c for c in competitor_metrics_list if not c.get("is_mock") and not c.get("is_invalid")]
+        mock_comps = [c for c in competitor_metrics_list if c.get("is_mock") and not c.get("is_invalid")]
         
-        # Sort each list by original rank
-        real_comps = sorted(real_comps, key=lambda x: x["rank"])
-        mock_comps = sorted(mock_comps, key=lambda x: x["rank"])
+        competitor_metrics_list = real_comps + mock_comps
         
-        # Combine them, taking all real ones first, then mock ones if we have fewer than 5
-        final_comps = (real_comps + mock_comps)[:5]
+        # Dynamic backfill if we have fewer than 5 competitors left
+        if len(competitor_metrics_list) < 5:
+            fallback_pool = get_dynamic_competitors(handle)
+            existing_names = {c["competitor_name"].lower().replace("@", "") for c in competitor_metrics_list}
+            needed = 5 - len(competitor_metrics_list)
+            extra_handles = [h for h in fallback_pool if h.lower() not in existing_names][:needed]
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(extra_handles) or 1) as executor:
+                extra_futures = [executor.submit(fetch_competitor, h, len(competitor_metrics_list) + idx + 1) for idx, h in enumerate(extra_handles)]
+                for future in concurrent.futures.as_completed(extra_futures):
+                    res = future.result()
+                    if not res.get("is_invalid"):
+                        competitor_metrics_list.append(res)
+                        
+        # Sort with real ones first, maintaining order
+        competitor_metrics_list = sorted(competitor_metrics_list, key=lambda x: (x.get("is_mock", False), x["rank"]))
+        
+        # combined final list limited to 5
+        final_comps = competitor_metrics_list[:5]
         
         # Re-assign ranks 1 through 5 for the combined final list
         for idx, comp in enumerate(final_comps, 1):

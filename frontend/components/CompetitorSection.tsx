@@ -42,7 +42,7 @@ export default function CompetitorSection({ competitorData }: CompetitorSectionP
                 </span>
                 <span className="font-bold text-zinc-800 text-sm truncate">{comp.competitor_name}</span>
               </div>
-              <a href={`https://instagram.com/${comp.competitor_name.replace('@', '')}`} target="_blank" rel="noreferrer" className="shrink-0 text-zinc-400 hover:text-indigo-500 transition-colors">
+              <a href={`https://www.instagram.com/${comp.competitor_name.replace('@', '').trim()}`} target="_blank" rel="noreferrer" className="shrink-0 text-zinc-400 hover:text-indigo-500 transition-colors">
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>

@@ -413,7 +413,9 @@ def _scrape_via_instagram_api(profile_url: str) -> list:
     
     print(f"[IG API] Scraping via public API for '{username}'...")
     r = requests.get(url, headers=headers, timeout=10)
-    if r.status_code != 200:
+    if r.status_code == 404:
+        raise FileNotFoundError(f"Instagram profile '{username}' does not exist (404).")
+    elif r.status_code != 200:
         raise RuntimeError(f"IG API failed with status {r.status_code}")
     
     data = r.json()
@@ -483,6 +485,9 @@ def scrape_latest_15_posts(profile_url: str) -> list:
         if posts:
             _save_to_csv(profile_url, posts)
             return posts
+    except FileNotFoundError as e:
+        print(f"[Profile Not Found] '{username}' does not exist (404). Propagating error.")
+        raise e
     except Exception as e:
         print(f"[IG API Failed] for '{username}': {e}. Trying Apify...")
 
