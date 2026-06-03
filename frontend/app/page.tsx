@@ -789,10 +789,7 @@ export default function Dashboard() {
           </div>
           <div className="text-left">
             <h1 className="text-sm md:text-base font-black tracking-wider text-indigo-950 flex items-center gap-2">
-              AURA AUDIT
-              <span className="text-[9px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100">
-                DECOUPLED v1.0
-              </span>
+              AUDIT TOOL
             </h1>
             <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Instagram Growth Analytics & Gemini Diagnostic Auditing</p>
           </div>

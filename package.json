@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "api": "cd backend && uvicorn main:app --reload --port 8000 --host 0.0.0.0",
-    "dev": "npx concurrently \"npm run api\" \"npm --prefix frontend run dev\""
+    "dev": "npx concurrently \"npm run api\" \"npm --prefix frontend run dev\"",
+    "dev:vanilla": "npx concurrently \"npm run api\" \"npx -y serve -l 5000 frontend-vanilla\""
   }
 }

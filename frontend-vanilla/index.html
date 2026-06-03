@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUDIT TOOL - Instagram Growth Analytics</title>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Chart.js for High-Fidelity Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Vanilla CSS Design System -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- BACKGROUND PASTEL GLOW ORBS -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <div class="app-layout">
+    
+    <!-- SIDEBAR PANEL: AUDIT HISTORY -->
+    <aside class="sidebar">
+      <h2 class="sidebar-title">Audit History</h2>
+      <div id="history-list" class="history-list">
+        <!-- History items dynamically injected here -->
+        <div class="history-empty">
+          <p>No history found</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT CONTAINER -->
+    <div class="main-wrapper">
+      
+      <!-- HEADER ROW -->
+      <header class="app-header">
+        <div class="header-logo-group">
+          <div class="logo-box">
+            <i data-lucide="sparkles" class="logo-icon"></i>
+          </div>
+          <div class="header-text">
+            <h1 class="header-title">AUDIT TOOL</h1>
+            <p class="header-subtitle">Instagram Growth Analytics & Gemini Diagnostic Auditing</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="content-container">
+
+        <!-- SEARCH BAR PANEL -->
+        <section class="search-panel">
+          <div class="search-info">
+            <h2 class="search-title">Instagram Growth Analytics & Diagnostic Auditing</h2>
+            <p class="search-desc">Paste any Instagram profile URL below to instantly analyze their engagement rate, tag strategy, and post performance.</p>
+          </div>
+          <form id="search-form" class="search-form">
+            <div class="input-group">
+              <label class="input-label">Target Instagram Profile URL</label>
+              <div class="input-wrapper">
+                <i data-lucide="search" class="search-input-icon"></i>
+                <input 
+                  type="url" 
+                  id="profile-url" 
+                  placeholder="paste the url here" 
+                  required
+                />
+              </div>
+            </div>
+            <button type="submit" id="submit-btn" class="submit-btn">
+              <i data-lucide="sparkles" class="btn-icon"></i>
+              <span>Perform Deep Audit</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- ERROR MESSAGE PANEL (HIDDEN BY DEFAULT) -->
+        <div id="error-panel" class="error-panel hidden">
+          <i data-lucide="alert-circle" class="error-icon"></i>
+          <div class="error-content">
+            <span class="error-title">Connection Fallback Active</span>
+            <p id="error-message" class="error-text"></p>
+          </div>
+        </div>
+
+        <!-- DYNAMIC CARD AREA: LOADER, EMPTY STATE, OR DASHBOARD -->
+        <div id="workspace-panel">
+          
+          <!-- EMPTY STATE CARD -->
+          <div id="empty-state" class="workspace-card empty-state">
+            <i data-lucide="activity" class="pulse-icon"></i>
+            <h3 class="state-title">Waiting for Data</h3>
+            <p class="state-desc">Enter an Instagram profile URL to generate client metrics and engagement analytics.</p>
+          </div>
+
+          <!-- INLINE LOADER CARD (HIDDEN BY DEFAULT) -->
+          <div id="loader-state" class="workspace-card loader-state hidden">
+            <div class="loader-circle-wrapper">
+              <svg class="loader-svg" viewBox="0 0 128 128">
+                <!-- Background track -->
+                <circle cx="64" cy="64" r="50" class="track-circle" stroke-width="8" />
+                <!-- Animated progress circle -->
+                <circle cx="64" cy="64" r="50" id="progress-circle" class="progress-circle" stroke-width="8" />
+              </svg>
+              <div class="loader-percentage-group">
+                <span id="loader-pct" class="loader-pct">0%</span>
+                <span class="loader-label">Analyzing</span>
+              </div>
+            </div>
+            <div class="loader-text-group">
+              <h3 id="loader-status" class="loader-status">Connecting to secure Instagram API...</h3>
+              <p class="loader-subtext">Please wait, this may take a few seconds</p>
+            </div>
+          </div>
+
+          <!-- DASHBOARD CONTENT PANEL (HIDDEN BY DEFAULT) -->
+          <div id="dashboard-state" class="dashboard-state hidden">
+            
+            <!-- BRAND AUDIT DETAILS HERO PANEL -->
+            <div class="hero-panel">
+              <div class="profile-meta-group">
+                <div class="profile-avatar">
+                  <span id="profile-initials">--</span>
+                </div>
+                <div class="profile-info">
+                  <div class="profile-name-row">
+                    <h2 id="profile-handle" class="profile-handle">@username</h2>
+                    <a id="profile-link" href="#" target="_blank" class="profile-link">
+                      <i data-lucide="external-link"></i>
+                    </a>
+                  </div>
+                  <div id="badge-container">
+                    <span class="live-audit-badge">
+                      <i data-lucide="zap"></i>
+                      Live Audit
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="hero-stats-group">
+                <div class="hero-stat-card bg-indigo">
+                  <span class="hero-stat-label">Audited</span>
+                  <span id="stat-posts-count" class="hero-stat-value">0 Posts</span>
+                </div>
+                <div class="hero-stat-card bg-orange">
+                  <span class="hero-stat-label">Total Likes (Audited)</span>
+                  <span id="stat-total-likes" class="hero-stat-value">0</span>
+                </div>
+                <div class="hero-stat-card bg-pink">
+                  <span class="hero-stat-label">Total Comments (Audited)</span>
+                  <span id="stat-total-comments" class="hero-stat-value">0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- CORE METRICS CARDS GRID -->
+            <div class="metrics-grid">
+              <!-- KPI Card 1: Followers -->
+              <div class="metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Followers</span>
+                  <div class="metric-icon-box bg-blue">
+                    <i data-lucide="users"></i>
+                  </div>
+                </div>
+                <div id="kpi-followers" class="metric-value">0</div>
+                <div class="metric-footer">Total target audience reach</div>
+              </div>
+
+              <!-- KPI Card 2: Engagement Rate -->
+              <div class="metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Engagement Rate</span>
+                  <div class="metric-icon-box bg-purple">
+                    <i data-lucide="activity"></i>
+                  </div>
+                </div>
+                <div id="kpi-er" class="metric-value">0%</div>
+                <div class="metric-footer">Likes + comments to followers ratio</div>
+              </div>
+
+              <!-- KPI Card 3: Posting Frequency -->
+              <div class="metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Posting Velocity</span>
+                  <div class="metric-icon-box bg-green">
+                    <i data-lucide="clock"></i>
+                  </div>
+                </div>
+                <div id="kpi-velocity" class="metric-value">0/wk</div>
+                <div class="metric-footer">Average posts published weekly</div>
+              </div>
+
+              <!-- KPI Card 4: Inactive Followers -->
+              <div class="metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Inactive Followers</span>
+                  <div class="metric-icon-box bg-rose">
+                    <i data-lucide="shield-alert"></i>
+                  </div>
+                </div>
+                <div id="kpi-inactive" class="metric-value">0%</div>
+                <div class="metric-footer text-rose">Estimated ghost/bot follower pool</div>
+              </div>
+            </div>
+
+            <!-- CHARTS GRAPHICS WRAPPER -->
+            <div class="charts-section">
+              <div class="chart-card">
+                <h3 class="chart-title">Engagement Trends (Last 12 Posts)</h3>
+                <div class="chart-container">
+                  <canvas id="trend-chart"></canvas>
+                </div>
+              </div>
+
+              <div class="chart-grid-two">
+                <div class="chart-card">
+                  <h3 class="chart-title">Reels Views Distribution</h3>
+                  <div class="chart-container">
+                    <canvas id="reels-chart"></canvas>
+                  </div>
+                </div>
+                <div class="chart-card">
+                  <h3 class="chart-title">Reach Performance Distribution</h3>
+                  <div class="chart-container">
+                    <canvas id="reach-chart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HASHTAG INTELLIGENCE PANEL -->
+            <div class="hashtag-section">
+              <div class="hashtag-header-row">
+                <h2 class="hashtag-section-title">
+                  <i data-lucide="hash"></i>
+                  Hashtag Strategy Intelligence
+                </h2>
+              </div>
+
+              <div class="hashtag-grid">
+                <!-- Left panel: AI Analysis & Guidelines -->
+                <div class="hashtag-analysis-card">
+                  <h3 class="panel-subtitle">AI Strategic Audit Assessment</h3>
+                  <div id="hashtag-ai-markdown" class="markdown-content">
+                    <!-- Dynamic Markdown Injected Here -->
+                  </div>
+                </div>
+
+                <!-- Right panel: Hashtag lists -->
+                <div class="hashtag-lists-card">
+                  <h3 class="panel-subtitle">Hashtag Performance Directory</h3>
+                  
+                  <div class="list-container">
+                    <h4 class="list-section-title text-indigo">High Engagement Performers (Scale Up)</h4>
+                    <div id="high-engagement-tags-list" class="tag-badge-list">
+                      <!-- tags injected here -->
+                    </div>
+                  </div>
+
+                  <div class="list-container">
+                    <h4 class="list-section-title text-rose">Low Engagement Performers (Stop Using)</h4>
+                    <div id="low-engagement-tags-list" class="tag-badge-list">
+                      <!-- tags injected here -->
+                    </div>
+                  </div>
+
+                  <div class="list-container">
+                    <h4 class="list-section-title text-emerald">Niche Candidates to Test</h4>
+                    <div id="test-candidates-list" class="tag-badge-list">
+                      <!-- tags injected here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIVAL COMPETITOR ANALYSIS SECTION -->
+            <div id="competitor-anchor">
+              <!-- Competitor Analysis rendered here dynamically -->
+            </div>
+
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Client-side Logic Controller -->
+  <script src="app.js"></script>
+</body>
+</html>
