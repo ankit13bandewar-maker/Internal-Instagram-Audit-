@@ -250,6 +250,82 @@
               </div>
             </div>
 
+            <!-- MEDIAN & AVERAGE METRICS ROW -->
+            <div class="median-metrics-grid">
+              <div class="median-metric-card">
+                <span id="median-likes-value" class="median-metric-value">0</span>
+                <span class="median-metric-label text-indigo">Median Likes</span>
+                <span class="median-metric-desc">Core baseline performance metric.</span>
+              </div>
+              <div class="median-metric-card">
+                <span id="median-comments-value" class="median-metric-value">0</span>
+                <span class="median-metric-label text-rose">Median Comments</span>
+                <span class="median-metric-desc">Baseline community engagement depth.</span>
+              </div>
+              <div class="median-metric-card">
+                <span id="average-likes-value" class="median-metric-value">0</span>
+                <span class="median-metric-label text-teal">Average Likes</span>
+                <span class="median-metric-desc">Overall profile reach metric across sample.</span>
+              </div>
+              <div class="median-metric-card position-relative">
+                <div class="median-metric-header">
+                  <span class="median-metric-label text-amber">Day With Most Posts</span>
+                  <i data-lucide="activity" class="metric-icon-small"></i>
+                </div>
+                <span id="most-active-day-value" class="median-metric-value mt-3">N/A</span>
+              </div>
+            </div>
+
+            <!-- BEST VS WORST POSTS STACKED ROW -->
+            <div class="best-worst-container">
+              <div class="best-worst-row bg-emerald-light">
+                <div class="best-worst-meta">
+                  <span class="best-worst-badge bg-emerald">Peak Content</span>
+                  <span id="best-post-stats" class="best-worst-text">0 Likes · 0 Comments</span>
+                </div>
+                <a id="best-post-link" href="#" target="_blank" class="best-worst-link truncate">No URL available</a>
+              </div>
+              <div class="best-worst-row bg-orange-light">
+                <div class="best-worst-meta">
+                  <span class="best-worst-badge bg-orange">Lowest Traction</span>
+                  <span id="worst-post-stats" class="best-worst-text">0 Likes · 0 Comments</span>
+                </div>
+                <a id="worst-post-link" href="#" target="_blank" class="best-worst-link truncate">No URL available</a>
+              </div>
+            </div>
+
+            <!-- TWO-COLUMN AUDITED CONTENT FEED & DIAGNOSTIC VIEWER -->
+            <div class="feed-section-wrapper">
+              
+              <!-- LEFT FEED PANEL -->
+              <div class="feed-panel-card">
+                <div class="feed-header-border">
+                  <h3 class="feed-panel-title">
+                    <i data-lucide="award" class="feed-title-icon"></i>
+                    Audited Content Feed
+                  </h3>
+                  <p class="feed-panel-desc">Sorted descending by Likes performance</p>
+                </div>
+                <!-- Scrolling List -->
+                <div id="audited-posts-feed" class="feed-list-container custom-scrollbar">
+                  <!-- Dynamic items -->
+                </div>
+              </div>
+
+              <!-- RIGHT AUDIT DEEP-DIVE VIEWER -->
+              <div class="viewer-panel-card">
+                <div id="post-deep-dive-viewer" class="viewer-container">
+                  <!-- Dynamic details -->
+                  <div class="viewer-empty-state">
+                    <i data-lucide="sparkles" class="empty-sparkles-icon"></i>
+                    <h4 class="empty-viewer-title">No Post Selected</h4>
+                    <p class="empty-viewer-desc">Select an item in the feed to evaluate its AI diagnostic brief.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
             <!-- HASHTAG INTELLIGENCE PANEL -->
             <div class="hashtag-section">
               <div class="hashtag-header-row">

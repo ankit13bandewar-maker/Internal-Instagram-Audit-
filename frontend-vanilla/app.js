@@ -8,7 +8,8 @@ let state = {
   progress: 0,
   progressInterval: null,
   activeProfile: '',
-  chartInstances: {}
+  chartInstances: {},
+  selectedPost: null
 };
 
 // SELECT DOM ELEMENTS
@@ -280,6 +281,7 @@ function displayDashboard(rawData) {
   const clientStats = data.calculated_metrics || {};
   
   state.activeProfile = data.profile_url || profileUrlInput.value.trim();
+  state.selectedPost = null; // Reset selection on new load
   
   // Hide placeholder and show dashboard wrapper
   emptyState.classList.add('hidden');
@@ -309,6 +311,12 @@ function displayDashboard(rawData) {
   
   // 3. Render Chart.js Graphics
   renderCharts(rawData);
+  
+  // 3.5. Render Median Metrics and Peak/Worst posts
+  renderMedianMetricsAndBestWorst(data);
+  
+  // 3.6. Render Two-Column Post Feed and Diagnostic Viewer
+  renderPostsFeedAndDeepDive(data);
   
   // 4. Ingest Hashtag Strategy
   const hashtagIntelligence = processHashtagIntelligence(data);
@@ -1096,6 +1104,298 @@ function processHashtagIntelligence(data) {
   };
 }
 
+// ─── RENDERING FOR NEW POSTS FEED & DIAGNOSTIC VIEWER ───
+function renderMedianMetricsAndBestWorst(data) {
+  const posts = data.posts || [];
+  if (posts.length === 0) return;
+  
+  const likes = posts.map(p => p.likes || 0);
+  const comments = posts.map(p => p.comments || 0);
+  
+  const calculateMedian = (arr) => {
+    if (!arr || arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  };
+  const calculateAverage = (arr) => {
+    if (!arr || arr.length === 0) return 0;
+    return Math.round(arr.reduce((sum, val) => sum + val, 0) / arr.length);
+  };
+  
+  const medianLikes = data.median_likes ?? calculateMedian(likes);
+  const medianComments = data.median_comments ?? calculateMedian(comments);
+  const averageLikes = data.average_likes ?? calculateAverage(likes);
+  
+  const getDayWithMostPosts = (postsList) => {
+    if (!postsList || postsList.length === 0) return 'N/A';
+    const dayCounts = {};
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    postsList.forEach(post => {
+      if (post.date && post.date !== '—') {
+        const d = new Date(post.date);
+        const dayName = days[d.getDay()];
+        if (dayName) {
+          dayCounts[dayName] = (dayCounts[dayName] || 0) + 1;
+        }
+      }
+    });
+    let maxDay = 'N/A';
+    let maxCount = -1;
+    Object.entries(dayCounts).forEach(([day, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        maxDay = day;
+      }
+    });
+    return maxDay;
+  };
+  
+  const dayWithMostPosts = data.calculated_metrics?.day_with_most_posts ?? getDayWithMostPosts(posts);
+  
+  const sortedPosts = [...posts].sort((a, b) => b.likes - a.likes);
+  const bestPost = sortedPosts[0] || { likes: 0, comments: 0, post_url: '#' };
+  const worstPost = sortedPosts[sortedPosts.length - 1] || { likes: 0, comments: 0, post_url: '#' };
+  
+  document.getElementById('median-likes-value').textContent = medianLikes.toLocaleString();
+  document.getElementById('median-comments-value').textContent = medianComments.toLocaleString();
+  document.getElementById('average-likes-value').textContent = averageLikes.toLocaleString();
+  document.getElementById('most-active-day-value').textContent = dayWithMostPosts;
+  
+  document.getElementById('best-post-stats').textContent = `${(bestPost.likes || 0).toLocaleString()} Likes · ${(bestPost.comments || 0).toLocaleString()} Comments`;
+  const bestLink = document.getElementById('best-post-link');
+  bestLink.href = bestPost.post_url || '#';
+  bestLink.textContent = bestPost.post_url || 'No URL available';
+  
+  document.getElementById('worst-post-stats').textContent = `${(worstPost.likes || 0).toLocaleString()} Likes · ${(worstPost.comments || 0).toLocaleString()} Comments`;
+  const worstLink = document.getElementById('worst-post-link');
+  worstLink.href = worstPost.post_url || '#';
+  worstLink.textContent = worstPost.post_url || 'No URL available';
+}
+
+function renderPostsFeedAndDeepDive(data) {
+  const feedContainer = document.getElementById('audited-posts-feed');
+  if (!feedContainer) return;
+  
+  const posts = data.posts || [];
+  if (posts.length === 0) {
+    feedContainer.innerHTML = `<div style="text-align:center; font-size:12px; color:#9ca3af; padding:40px 10px;">No audited posts found.</div>`;
+    renderPostDeepDive(null);
+    return;
+  }
+
+  // Sort descending by likes performance
+  const sortedPosts = [...posts].sort((a, b) => b.likes - a.likes);
+  
+  // Set default selected post to first post if none selected or if selected is not in current data
+  if (!state.selectedPost || !sortedPosts.some(p => p.index === state.selectedPost.index)) {
+    state.selectedPost = sortedPosts[0];
+  }
+  
+  feedContainer.innerHTML = sortedPosts.map((post, i) => {
+    const isSelected = state.selectedPost && state.selectedPost.index === post.index;
+    const activeClass = isSelected ? 'active' : '';
+    const winFixClass = post.is_above_baseline ? 'win' : 'fix';
+    const winFixText = post.is_above_baseline ? '🟢 WIN' : '🔴 FIX';
+    
+    const snippetText = post.snippet || post.caption?.substring(0, 60) || '—';
+    const cleanSnippet = snippetText.replace(/"/g, '&quot;');
+    
+    return `
+      <div class="feed-post-item ${activeClass}" data-post-index="${post.index}">
+        <div class="feed-post-rank">${i + 1}</div>
+        <div class="feed-post-content">
+          <div class="feed-post-row-top">
+            <span class="feed-post-index">${post.index}</span>
+            <span class="feed-post-date">
+              <i data-lucide="calendar" style="width:12px; height:12px;"></i>
+              ${post.date || '—'}
+            </span>
+          </div>
+          <p class="feed-post-snippet">"${cleanSnippet}"</p>
+          <div class="feed-post-footer">
+            <div class="feed-post-stats">
+              <span class="feed-stat-likes">
+                <i data-lucide="heart" style="width:12px; height:12px; fill:currentColor;"></i>
+                ${(post.likes || 0).toLocaleString()}
+              </span>
+              <span class="feed-stat-comments">
+                <i data-lucide="message-square" style="width:12px; height:12px; fill:currentColor;"></i>
+                ${(post.comments || 0).toLocaleString()}
+              </span>
+            </div>
+            <div class="feed-post-badges">
+              <span class="win-fix-badge ${winFixClass}">${winFixText}</span>
+              ${post.post_url ? `
+                <a href="${post.post_url}" target="_blank" class="feed-view-live-btn" onclick="event.stopPropagation();">
+                  View Live <i data-lucide="external-link" style="width:10px; height:10px;"></i>
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" class="feed-chevron"></i>
+      </div>
+    `;
+  }).join('');
+  
+  // Bind click event listener to each feed-post-item
+  const items = feedContainer.querySelectorAll('.feed-post-item');
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      const postIndex = item.getAttribute('data-post-index');
+      const postObj = sortedPosts.find(p => p.index === postIndex);
+      if (postObj) {
+        // Set active item class
+        items.forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        
+        state.selectedPost = postObj;
+        renderPostDeepDive(postObj);
+      }
+    });
+  });
+  
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+  
+  // Render the details of selected post
+  renderPostDeepDive(state.selectedPost);
+}
+
+function renderPostDeepDive(post) {
+  const viewer = document.getElementById('post-deep-dive-viewer');
+  if (!viewer) return;
+  
+  if (!post) {
+    viewer.innerHTML = `
+      <div class="viewer-empty-state">
+        <i data-lucide="sparkles" class="empty-sparkles-icon"></i>
+        <h4 class="empty-viewer-title">No Post Selected</h4>
+        <p class="empty-viewer-desc">Select an item in the feed to evaluate its AI diagnostic brief.</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
+  
+  const statusText = post.is_above_baseline ? 'Above Baseline' : 'Below Baseline';
+  const winFixClass = post.is_above_baseline ? 'win' : 'fix';
+  
+  const hashtags = post.hashtags_used || [];
+  const hashtagsHtml = hashtags.length > 0
+    ? hashtags.map(tag => `<span class="viewer-tag-bubble">${tag}</span>`).join('')
+    : '';
+    
+  const briefMarkdown = post.log_content || post.brief || 'No diagnostic audit brief available.';
+  const briefHtml = parseMarkdown(briefMarkdown);
+  
+  viewer.innerHTML = `
+    <div class="viewer-container">
+      <!-- VIEWER HEADER -->
+      <div class="viewer-detail-header">
+        <div class="viewer-header-info">
+          <div class="viewer-header-title-row">
+            <h3 class="viewer-header-title">Diagnostic Audit: ${post.index}</h3>
+            <span class="win-fix-badge ${winFixClass}">${statusText}</span>
+          </div>
+          <div class="viewer-header-subrow">
+            <span>Posted on ${post.date || '—'}</span>
+            <span>•</span>
+            <span class="viewer-post-type-badge">Type: ${post.type || 'Image'}</span>
+          </div>
+        </div>
+        
+        <div class="viewer-actions">
+          ${post.post_url ? `
+            <a href="${post.post_url}" target="_blank" class="viewer-action-btn live-btn">
+              <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+              View Live Post
+            </a>
+          ` : ''}
+          <button id="copy-brief-btn" class="viewer-action-btn copy-btn">
+            <i data-lucide="copy" style="width:14px; height:14px;"></i>
+            <span>Copy Brief</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- VIEWER CONTENT BODY -->
+      <div class="viewer-content-body custom-scrollbar">
+        <!-- STATS ROW -->
+        <div class="viewer-stats-row">
+          <div class="viewer-stat-card">
+            <i data-lucide="heart" class="viewer-stat-card-icon likes" style="fill:currentColor;"></i>
+            <div>
+              <span class="viewer-stat-label">Total Likes</span>
+              <span class="viewer-stat-value">${(post.likes || 0).toLocaleString()}</span>
+            </div>
+          </div>
+          <div class="viewer-stat-card">
+            <i data-lucide="message-square" class="viewer-stat-card-icon comments" style="fill:currentColor;"></i>
+            <div>
+              <span class="viewer-stat-label">Total Comments</span>
+              <span class="viewer-stat-value">${(post.comments || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- CAPTION BOX -->
+        <div class="viewer-caption-box">
+          <span class="viewer-caption-title">Instagram Post Caption</span>
+          <p class="viewer-caption-text">"${post.caption || 'No caption text exists for this post.'}"</p>
+          ${hashtagsHtml ? `
+            <div class="viewer-tags-list">
+              ${hashtagsHtml}
+            </div>
+          ` : ''}
+        </div>
+        
+        <!-- GEMINI AI BOX -->
+        <div class="viewer-ai-box">
+          <div class="viewer-ai-header">
+            <i data-lucide="sparkles"></i>
+            Gemini AI Growth Audit
+          </div>
+          <div class="viewer-ai-content">
+            ${briefHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Bind Copy Brief Button Action
+  const copyBriefBtn = viewer.querySelector('#copy-brief-btn');
+  if (copyBriefBtn) {
+    copyBriefBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(briefMarkdown);
+      const btnSpan = copyBriefBtn.querySelector('span');
+      const btnIcon = copyBriefBtn.querySelector('i');
+      if (btnSpan && btnIcon) {
+        btnSpan.textContent = 'Copied!';
+        btnSpan.style.color = '#059669';
+        btnIcon.setAttribute('data-lucide', 'check');
+        btnIcon.style.color = '#059669';
+        if (window.lucide) window.lucide.createIcons();
+        
+        setTimeout(() => {
+          btnSpan.textContent = 'Copy Brief';
+          btnSpan.style.color = '';
+          btnIcon.setAttribute('data-lucide', 'copy');
+          btnIcon.style.color = '';
+          if (window.lucide) window.lucide.createIcons();
+        }, 2000);
+      }
+    });
+  }
+  
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
 function getProfileHandle(url) {
   try {
     const parsed = new URL(url);
@@ -1115,7 +1415,7 @@ function parseMarkdown(mdText) {
   // Replace headers with conditional classes based on contents
   html = html.replace(/### (.*?)(?:\n|$)/g, (match, p1) => {
     const text = p1.trim();
-    const isWin = text.includes("👑") || text.includes("📋") || text.includes("SUCCESS") || text.includes("REPLICATION") || text.includes("Assessment") || text.includes("STRATEGY") || text.includes("RECOMMENDATION");
+    const isWin = text.includes("👑") || text.includes("📋") || text.includes("SUCCESS") || text.includes("REPLICATION") || text.includes("Assessment") || text.includes("STRATEGY") || text.includes("RECOMMENDATION") || text.includes("🟢") || text.includes("WIN");
     const colorClass = isWin ? 'text-indigo-800' : 'text-rose-700';
     return `<h3 class="${colorClass}">${text}</h3>`;
   });
