@@ -645,10 +645,11 @@ export default function Dashboard() {
       }
 
       setRawApiData(resData);
-      setActiveProfile(resData.profile_url || profileUrl);
+      setActiveProfile(resData.client_metrics?.profile_url || resData.profile_url || profileUrl);
       setCacheSource("live");
-      if (resData.posts && resData.posts.length > 0) {
-        setSelectedPost(resData.posts[0]);
+      const postsList = resData.client_metrics?.posts || resData.posts;
+      if (postsList && postsList.length > 0) {
+        setSelectedPost(postsList[0]);
       } else {
         setSelectedPost(null);
       }

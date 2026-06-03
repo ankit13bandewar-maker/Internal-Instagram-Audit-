@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 from apify_client import ApifyClient
 
 # Load .env so APIFY_API_TOKEN is available regardless of import order
-load_dotenv()
-CSV_PATH     = r"c:\Users\user\Desktop\Client Audit\instagram_posts_dataset.csv"
+base_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(base_dir, ".env"))
+CSV_PATH     = os.path.join(base_dir, "data_cache", "instagram_posts_dataset.csv")
 ACTOR_ID     = "apify/instagram-scraper"   # Official Apify Instagram scraper actor
 MAX_POSTS    = 15
 
@@ -30,14 +31,18 @@ def _load_csv_for_profile(username: str) -> list | None:
             return None
         posts = []
         for _, row in df_filtered.iterrows():
+            url = str(row.get("url", "")).strip()
+            shortcode = str(row.get("shortcode", "")).strip()
+            if not shortcode or "/p/" not in url and "/reel/" not in url and "/tv/" not in url:
+                continue
             posts.append({
                 "likesCount":    int(row.get("likes", 0)),
                 "commentsCount": int(row.get("comments", 0)),
                 "timestamp":     str(row.get("timestamp", "")),
                 "type":          str(row.get("type", "Image")),
                 "caption":       str(row.get("caption", "")),
-                "url":           str(row.get("url", "")),
-                "shortcode":     str(row.get("shortcode", "")),
+                "url":           url,
+                "shortcode":     shortcode,
             })
         print(f"[Cache HIT] Loaded {len(posts)} posts for '{username}' from CSV.")
         return posts[:MAX_POSTS]
@@ -51,6 +56,10 @@ def _save_to_csv(profile_url: str, posts: list):
     try:
         rows = []
         for p in posts:
+            url = p.get("url", "")
+            shortcode = p.get("shortcode", "")
+            if not shortcode or "/p/" not in url and "/reel/" not in url and "/tv/" not in url:
+                continue
             rows.append({
                 "profile_url": profile_url,
                 "likes":       p.get("likesCount", 0),
@@ -58,8 +67,8 @@ def _save_to_csv(profile_url: str, posts: list):
                 "timestamp":   p.get("timestamp", ""),
                 "type":        p.get("type", "Image"),
                 "caption":     p.get("caption", ""),
-                "url":         p.get("url", ""),
-                "shortcode":   p.get("shortcode", ""),
+                "url":         url,
+                "shortcode":   shortcode,
             })
         df_new = pd.DataFrame(rows)
 
@@ -107,6 +116,10 @@ def _scrape_via_apify(profile_url: str) -> list:
         # Apify Instagram Scraper field names
         shortcode  = item.get("shortCode") or item.get("shortcode") or ""
         post_url   = item.get("url") or (f"https://www.instagram.com/p/{shortcode}/" if shortcode else "")
+        # Skip profile metadata items
+        if not shortcode or "/p/" not in post_url and "/reel/" not in post_url and "/tv/" not in post_url:
+            continue
+            
         timestamp  = item.get("timestamp") or item.get("taken_at_timestamp") or datetime.utcnow().isoformat()
         post_type  = item.get("type") or ("Video" if item.get("isVideo") else "Image")
 
