@@ -304,7 +304,7 @@ function displayDashboard(rawData) {
   // 2. Ingest KPI Cards
   document.getElementById('kpi-followers').textContent = clientStats.total_followers ? clientStats.total_followers.toLocaleString() : '0';
   document.getElementById('kpi-er').textContent = `${clientStats.engagement_rate || 0}%`;
-  document.getElementById('kpi-velocity').textContent = `${clientStats.posting_frequency_weekly || 0}/wk`;
+  document.getElementById('kpi-velocity').textContent = `${clientStats.posting_frequency_daily || 0}/day`;
   document.getElementById('kpi-inactive').textContent = `${clientStats.inactive_follower_percentage || 0}%`;
   
   // 3. Render Chart.js Graphics
@@ -723,7 +723,7 @@ function renderCompetitors(competitors) {
     const followersFormatted = comp.follower_count.toLocaleString();
     const er = comp.metrics?.engagement_rate ?? 0;
     const barWidth = Math.min(er * 10, 100);
-    const velocity = comp.metrics?.posting_frequency_weekly ?? 0;
+    const velocity = comp.metrics?.posting_frequency_daily ?? 0;
     const ghostPct = comp.metrics?.inactive_follower_percentage ?? 0;
     
     const bestPostUrl = comp.metrics?.best_post?.url || '#';
@@ -770,7 +770,7 @@ function renderCompetitors(competitors) {
                 <i data-lucide="clock"></i>
                 <span>Velocity</span>
               </div>
-              <span class="comp-stat-box-val">${velocity} <span style="font-size:8px; font-weight:500;">/wk</span></span>
+              <span class="comp-stat-box-val">${velocity} <span style="font-size:8px; font-weight:500;">/day</span></span>
             </div>
           </div>
 
