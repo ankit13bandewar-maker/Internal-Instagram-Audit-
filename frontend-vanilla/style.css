@@ -1134,7 +1134,25 @@ body {
   flex-direction: column;
   gap: 16px;
   flex-grow: 1;
-  justify-content: space-between;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+.quartiles-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.quartiles-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.quartiles-body::-webkit-scrollbar-thumb {
+  background: var(--color-zinc-200);
+  border-radius: 4px;
+}
+
+.quartiles-body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-zinc-300);
 }
 
 .quartile-box {
