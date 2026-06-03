@@ -841,58 +841,7 @@ export default function Dashboard() {
         </aside>
 
         {/* MAIN CONTAINER */}
-        <main ref={mainRef} className={`flex-1 w-full p-4 md:p-6 md:pl-8 space-y-6 relative ${loading ? "overflow-hidden" : "overflow-y-auto"}`}>
-
-        {/* EXTREME BLUR LOADING OVERLAY WITH CIRCULAR PROGRESS */}
-        {loading && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-[60px] transition-all duration-500 ease-in-out">
-            <div className="bg-white/80 backdrop-blur-md border border-white/40 p-8 rounded-3xl shadow-2xl flex flex-col items-center justify-center space-y-6 max-w-sm w-full mx-4 border-t-4 border-t-indigo-600 transform scale-100 transition-all duration-300">
-              {/* SVG Circular Progress Wheel */}
-              <div className="relative w-32 h-32">
-                <svg className="w-full h-full transform -rotate-90">
-                  {/* Background circle */}
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="50"
-                    className="stroke-zinc-100 fill-transparent"
-                    strokeWidth="8"
-                  />
-                  {/* Progress circle */}
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="50"
-                    className="stroke-indigo-600 fill-transparent transition-all duration-100 ease-out"
-                    strokeWidth="8"
-                    strokeDasharray={2 * Math.PI * 50}
-                    strokeDashoffset={2 * Math.PI * 50 - (progress / 100) * (2 * Math.PI * 50)}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                {/* Centered Percentage Text */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-black text-indigo-950">{progress}%</span>
-                  <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Analyzing</span>
-                </div>
-              </div>
-
-              {/* Dynamic Status Text */}
-              <div className="text-center space-y-1">
-                <h3 className="text-sm font-extrabold text-zinc-800">
-                  {progress < 25 && "Connecting to secure Instagram API..."}
-                  {progress >= 25 && progress < 50 && "Ingesting profile metadata & post statistics..."}
-                  {progress >= 50 && progress < 75 && "Running hashtag classification algorithms..."}
-                  {progress >= 75 && progress < 95 && "Analyzing direct competitor metrics..."}
-                  {progress >= 95 && "Compiling final diagnostic audit dashboard..."}
-                </h3>
-                <p className="text-xs text-zinc-400 font-semibold animate-pulse">
-                  Please wait, this may take a few seconds
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        <main ref={mainRef} className="flex-1 w-full p-4 md:p-6 md:pl-8 space-y-6 overflow-y-auto relative">
 
         {/* ERROR MESSAGE PANEL */}
         {error && (
@@ -952,11 +901,61 @@ export default function Dashboard() {
 
         </section>
 
-        {(!data || !clientStats) ? (
-            <div className="flex flex-col items-center justify-center py-24 px-4 text-center border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-900 shadow-sm shadow-zinc-200/20">
-              <Activity className="w-10 h-10 stroke-1 text-zinc-300 animate-pulse mb-4" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200">Waiting for Data</h3>
-              <p className="text-xs font-semibold text-zinc-500 mt-2 max-w-sm">Enter an Instagram profile URL to generate client metrics and engagement analytics.</p>
+        {(loading || !data || !clientStats) ? (
+            <div className="flex flex-col items-center justify-center py-24 px-4 text-center border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-900 shadow-sm shadow-zinc-200/20 transition-all duration-300">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-300">
+                  {/* SVG Circular Progress Wheel */}
+                  <div className="relative w-32 h-32">
+                    <svg className="w-full h-full transform -rotate-90">
+                      {/* Background circle */}
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="50"
+                        className="stroke-zinc-100 fill-transparent"
+                        strokeWidth="8"
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="50"
+                        className="stroke-indigo-600 fill-transparent transition-all duration-100 ease-out"
+                        strokeWidth="8"
+                        strokeDasharray={2 * Math.PI * 50}
+                        strokeDashoffset={2 * Math.PI * 50 - (progress / 100) * (2 * Math.PI * 50)}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    {/* Centered Percentage Text */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-black text-indigo-950">{progress}%</span>
+                      <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Analyzing</span>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Status Text */}
+                  <div className="text-center space-y-1">
+                    <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200">
+                      {progress < 25 && "Connecting to secure Instagram API..."}
+                      {progress >= 25 && progress < 50 && "Ingesting profile metadata & post statistics..."}
+                      {progress >= 50 && progress < 75 && "Running hashtag classification algorithms..."}
+                      {progress >= 75 && progress < 95 && "Analyzing direct competitor metrics..."}
+                      {progress >= 95 && "Compiling final diagnostic audit dashboard..."}
+                    </h3>
+                    <p className="text-xs text-zinc-400 font-semibold animate-pulse">
+                      Please wait, this may take a few seconds
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center animate-in fade-in duration-300">
+                  <Activity className="w-10 h-10 stroke-1 text-zinc-300 dark:text-zinc-600 animate-pulse mb-4" />
+                  <h3 className="text-sm font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200">Waiting for Data</h3>
+                  <p className="text-xs font-semibold text-zinc-500 mt-2 max-w-sm">Enter an Instagram profile URL to generate client metrics and engagement analytics.</p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
