@@ -302,9 +302,40 @@ function displayDashboard(rawData) {
   
   const totalComments = postsCount > 0 ? data.posts.reduce((sum, p) => sum + (p.comments || 0), 0) : 0;
   document.getElementById('stat-total-comments').textContent = totalComments.toLocaleString();
+  const followersVal = clientStats.total_followers || data.follower_count || 0;
+  document.getElementById('stat-total-followers').textContent = followersVal.toLocaleString();
   
   // 2. Ingest KPI Cards
-  document.getElementById('kpi-followers').textContent = clientStats.total_followers ? clientStats.total_followers.toLocaleString() : '0';
+  const authenticityScore = clientStats.audience_authenticity_score ?? (100 - (clientStats.inactive_follower_percentage || 0));
+  const authenticityScoreRounded = Math.round(authenticityScore * 10) / 10;
+  
+  const authValEl = document.getElementById('kpi-authenticity');
+  if (authValEl) {
+    authValEl.textContent = `${authenticityScoreRounded}%`;
+    const authCard = document.getElementById('kpi-authenticity-card');
+    const authIconBox = document.getElementById('kpi-authenticity-icon-box');
+    
+    if (authCard && authIconBox) {
+      authCard.classList.remove('border-emerald-active', 'border-amber-active', 'border-rose-active');
+      authValEl.classList.remove('text-emerald-active', 'text-amber-active', 'text-rose-active');
+      authIconBox.classList.remove('bg-emerald-active', 'bg-amber-active', 'bg-rose-active-kpi');
+      
+      if (authenticityScoreRounded >= 80) {
+        authCard.classList.add('border-emerald-active');
+        authValEl.classList.add('text-emerald-active');
+        authIconBox.classList.add('bg-emerald-active');
+      } else if (authenticityScoreRounded >= 60) {
+        authCard.classList.add('border-amber-active');
+        authValEl.classList.add('text-amber-active');
+        authIconBox.classList.add('bg-amber-active');
+      } else {
+        authCard.classList.add('border-rose-active');
+        authValEl.classList.add('text-rose-active');
+        authIconBox.classList.add('bg-rose-active-kpi');
+      }
+    }
+  }
+  
   document.getElementById('kpi-er').textContent = `${clientStats.engagement_rate || 0}%`;
   document.getElementById('kpi-velocity').textContent = `${clientStats.posting_frequency_daily || 0}/day`;
   document.getElementById('kpi-inactive').textContent = `${clientStats.inactive_follower_percentage || 0}%`;

@@ -918,7 +918,7 @@ body {
 
 .hashtag-card.flex-col {
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .hashtag-card.border-indigo {
@@ -1548,6 +1548,7 @@ body {
   text-transform: uppercase;
   color: var(--color-zinc-400);
   letter-spacing: 0.05em;
+  margin-top: auto;
 }
 
 /* COMPETITOR ANALYSIS */
@@ -1817,6 +1818,40 @@ body {
 
 .comp-highlight-btn.worst:hover {
   background-color: var(--color-zinc-100);
+}
+
+/* AUDIENCE AUTHENTICITY SCORE DYNAMIC STYLES */
+.border-emerald-active {
+  border-color: #a7f3d0 !important;
+}
+.border-amber-active {
+  border-color: #fde68a !important;
+}
+.border-rose-active {
+  border-color: #fecaca !important;
+}
+
+.text-emerald-active {
+  color: var(--color-emerald-600) !important;
+}
+.text-amber-active {
+  color: #d97706 !important;
+}
+.text-rose-active {
+  color: var(--color-rose-700) !important;
+}
+
+.bg-emerald-active {
+  background-color: #ecfdf5 !important;
+  color: #059669 !important;
+}
+.bg-amber-active {
+  background-color: #fffbeb !important;
+  color: #d97706 !important;
+}
+.bg-rose-active-kpi {
+  background-color: #fff5f5 !important;
+  color: #e53e3e !important;
 }
 
 /* UTILITY CLASSES */
