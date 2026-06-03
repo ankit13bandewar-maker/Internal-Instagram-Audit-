@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Heart,
   MessageSquare,
@@ -270,6 +270,74 @@ export default function Dashboard() {
   const [hashtagCopied, setHashtagCopied] = useState(false);
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
 
+  // ─── Loading progress state & manual smooth animation engine ───
+  const [progress, setProgress] = useState(0);
+  const progressIntervalRef = useRef<any>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  // Clean up any interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const startProgress = () => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+    setProgress(0);
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    progressIntervalRef.current = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) {
+          if (prev < 98) return prev + 1;
+          return prev;
+        }
+        // Smooth tiny increments for a premium organic feel
+        let step = 1;
+        if (prev < 20) {
+          step = Math.floor(Math.random() * 3) + 2; // 2-4%
+        } else if (prev < 50) {
+          step = Math.floor(Math.random() * 2) + 1; // 1-2%
+        } else if (prev < 80) {
+          step = Math.random() > 0.3 ? 1 : 0; // 0-1%
+        } else {
+          step = Math.random() > 0.6 ? 1 : 0; // 0-1%
+        }
+        const nextVal = prev + step;
+        return nextVal > 95 ? 95 : nextVal;
+      });
+    }, 120); // 120ms tick is super fast and smooth!
+  };
+
+  const finishProgress = () => {
+    return new Promise<void>((resolve) => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      
+      const finishInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(finishInterval);
+            resolve();
+            return 100;
+          }
+          // Increment by 2-4% every 20ms to feel like a quick, satisfying burst to the end
+          const step = Math.floor(Math.random() * 3) + 2;
+          const nextVal = prev + step;
+          return nextVal >= 100 ? 100 : nextVal;
+        });
+      }, 20); // Fast ticks for completion burst
+    });
+  };
+
+
   // ─── Supabase state ───
   const [cacheSource, setCacheSource] = useState<"live" | "cache" | null>(null);
   const [retrieveHandle, setRetrieveHandle] = useState("");
@@ -294,11 +362,14 @@ export default function Dashboard() {
 
   const handleHistoryClick = async (username: string) => {
     setLoading(true);
+    startProgress();
     setError(null);
     try {
       const res = await fetch(`/api/history-snapshot/${encodeURIComponent(username)}`);
       if (!res.ok) throw new Error("Failed to load snapshot");
       const hData = await res.json();
+      await finishProgress();
+      await new Promise(resolve => setTimeout(resolve, 600));
       setRawApiData(hData);
       setActiveProfile(hData.client_metrics?.profile_url || `https://www.instagram.com/${username}`);
       if (hData.client_metrics?.posts?.length > 0) {
@@ -606,6 +677,7 @@ export default function Dashboard() {
     if (!profileUrl.trim()) return;
 
     setLoading(true);
+    startProgress();
     setError(null);
     setCacheSource(null);
 
@@ -637,6 +709,8 @@ export default function Dashboard() {
         const statusData = await statusRes.json();
         
         if (statusData.status === "completed") {
+          await finishProgress();
+          await new Promise(resolve => setTimeout(resolve, 600));
           resData = statusData.data;
           break;
         } else if (statusData.status === "error") {
@@ -767,7 +841,58 @@ export default function Dashboard() {
         </aside>
 
         {/* MAIN CONTAINER */}
-        <main className="flex-1 w-full p-4 md:p-6 md:pl-8 space-y-6 overflow-y-auto relative">
+        <main ref={mainRef} className={`flex-1 w-full p-4 md:p-6 md:pl-8 space-y-6 relative ${loading ? "overflow-hidden" : "overflow-y-auto"}`}>
+
+        {/* EXTREME BLUR LOADING OVERLAY WITH CIRCULAR PROGRESS */}
+        {loading && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-[60px] transition-all duration-500 ease-in-out">
+            <div className="bg-white/80 backdrop-blur-md border border-white/40 p-8 rounded-3xl shadow-2xl flex flex-col items-center justify-center space-y-6 max-w-sm w-full mx-4 border-t-4 border-t-indigo-600 transform scale-100 transition-all duration-300">
+              {/* SVG Circular Progress Wheel */}
+              <div className="relative w-32 h-32">
+                <svg className="w-full h-full transform -rotate-90">
+                  {/* Background circle */}
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="50"
+                    className="stroke-zinc-100 fill-transparent"
+                    strokeWidth="8"
+                  />
+                  {/* Progress circle */}
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="50"
+                    className="stroke-indigo-600 fill-transparent transition-all duration-100 ease-out"
+                    strokeWidth="8"
+                    strokeDasharray={2 * Math.PI * 50}
+                    strokeDashoffset={2 * Math.PI * 50 - (progress / 100) * (2 * Math.PI * 50)}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                {/* Centered Percentage Text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-black text-indigo-950">{progress}%</span>
+                  <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Analyzing</span>
+                </div>
+              </div>
+
+              {/* Dynamic Status Text */}
+              <div className="text-center space-y-1">
+                <h3 className="text-sm font-extrabold text-zinc-800">
+                  {progress < 25 && "Connecting to secure Instagram API..."}
+                  {progress >= 25 && progress < 50 && "Ingesting profile metadata & post statistics..."}
+                  {progress >= 50 && progress < 75 && "Running hashtag classification algorithms..."}
+                  {progress >= 75 && progress < 95 && "Analyzing direct competitor metrics..."}
+                  {progress >= 95 && "Compiling final diagnostic audit dashboard..."}
+                </h3>
+                <p className="text-xs text-zinc-400 font-semibold animate-pulse">
+                  Please wait, this may take a few seconds
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ERROR MESSAGE PANEL */}
         {error && (
@@ -827,25 +952,7 @@ export default function Dashboard() {
 
         </section>
 
-        {/* LOADING SHIMMER GRID */}
-        {loading ? (
-          <div className="space-y-6 animate-pulse">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 bg-white border border-zinc-200/50 rounded-xl" />
-              ))}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px]">
-              <div className="lg:col-span-5 bg-white border border-zinc-200/50 rounded-2xl p-4 space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-zinc-100 rounded-xl" />
-                ))}
-              </div>
-              <div className="lg:col-span-7 bg-white border border-zinc-200/50 rounded-2xl" />
-            </div>
-          </div>
-        ) : (
-          (!data || !clientStats) ? (
+        {(!data || !clientStats) ? (
             <div className="flex flex-col items-center justify-center py-24 px-4 text-center border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-900 shadow-sm shadow-zinc-200/20">
               <Activity className="w-10 h-10 stroke-1 text-zinc-300 animate-pulse mb-4" />
               <h3 className="text-sm font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200">Waiting for Data</h3>
@@ -1949,7 +2056,7 @@ export default function Dashboard() {
 
             </div>
           )
-        )}
+        }
 
         <hr className="border-zinc-800 my-12" />
         <CompetitorSection competitorData={competitorData} />
