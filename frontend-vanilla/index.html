@@ -213,9 +213,14 @@
             <!-- CHARTS GRAPHICS WRAPPER -->
             <div class="charts-section">
               <div class="chart-card">
-                <h3 class="chart-title">Engagement Trends (Last 12 Posts)</h3>
+                <h3 class="chart-title">Audience Growth Timeline</h3>
                 <div class="chart-container">
                   <canvas id="trend-chart"></canvas>
+                  <div id="trend-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
+                    <span class="placeholder-emoji">📈</span>
+                    <p class="placeholder-title">Establishing your growth baseline...</p>
+                    <p class="placeholder-desc">Search this profile again tomorrow to plot the velocity trend curve automatically!</p>
+                  </div>
                 </div>
               </div>
 
@@ -224,12 +229,22 @@
                   <h3 class="chart-title">Reels Views Distribution</h3>
                   <div class="chart-container">
                     <canvas id="reels-chart"></canvas>
+                    <div id="reels-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
+                      <span class="placeholder-emoji">🎬</span>
+                      <p class="placeholder-title">No Reels Detected</p>
+                      <p class="placeholder-desc">No Reels were found in the 15 audited posts for this profile.</p>
+                    </div>
                   </div>
                 </div>
                 <div class="chart-card">
                   <h3 class="chart-title">Reach Performance Distribution</h3>
                   <div class="chart-container">
                     <canvas id="reach-chart"></canvas>
+                    <div id="reach-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
+                      <span class="placeholder-emoji">🔍</span>
+                      <p class="placeholder-title">No Video Content Detected</p>
+                      <p class="placeholder-desc">No video or short-form Reels were found in the 15 audited posts for this profile.</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -244,41 +259,133 @@
                 </h2>
               </div>
 
-              <div class="hashtag-grid">
-                <!-- Left panel: AI Analysis & Guidelines -->
-                <div class="hashtag-analysis-card">
-                  <h3 class="panel-subtitle">AI Strategic Audit Assessment</h3>
-                  <div id="hashtag-ai-markdown" class="markdown-content">
-                    <!-- Dynamic Markdown Injected Here -->
+              <!-- ROW 1: Matrix, Quartiles, and AI Strategy -->
+              <div class="hashtag-row-1">
+                
+                <!-- Card 1: Distribution Matrix -->
+                <div class="hashtag-card flex-col">
+                  <div class="hashtag-card-header">
+                    <div>
+                      <h3 class="panel-subtitle">🔮 Hashtag Distribution Matrix</h3>
+                      <p class="panel-subdesc">Usage ratios across audited posts</p>
+                    </div>
+                    <span class="live-badge">LIVE</span>
+                  </div>
+                  <div class="table-scroll-container">
+                    <table class="hashtag-matrix-table">
+                      <thead>
+                        <tr>
+                          <th>Hashtag</th>
+                          <th class="text-right">Usage Ratio</th>
+                        </tr>
+                      </thead>
+                      <tbody id="hashtag-matrix-body">
+                        <!-- Dynamically filled -->
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
-                <!-- Right panel: Hashtag lists -->
-                <div class="hashtag-lists-card">
-                  <h3 class="panel-subtitle">Hashtag Performance Directory</h3>
-                  
-                  <div class="list-container">
-                    <h4 class="list-section-title text-indigo">High Engagement Performers (Scale Up)</h4>
-                    <div id="high-engagement-tags-list" class="tag-badge-list">
-                      <!-- tags injected here -->
+                <!-- Card 2: Engagement Quartiles -->
+                <div class="hashtag-card flex-col">
+                  <div class="hashtag-card-header">
+                    <div>
+                      <h3 class="panel-subtitle">📈 Engagement Performance Quartiles</h3>
+                      <p class="panel-subdesc">Tags classified by historical engagement thresholds.</p>
                     </div>
                   </div>
-
-                  <div class="list-container">
-                    <h4 class="list-section-title text-rose">Low Engagement Performers (Stop Using)</h4>
-                    <div id="low-engagement-tags-list" class="tag-badge-list">
-                      <!-- tags injected here -->
+                  <div class="quartiles-body">
+                    <!-- High Engagement -->
+                    <div class="quartile-box bg-emerald">
+                      <div class="quartile-header">
+                        <span id="q75-label" class="q-badge bg-emerald-badge">Top 25% (≥ 0 Eng)</span>
+                        <span id="q75-count" class="q-count text-emerald">0 Tags</span>
+                      </div>
+                      <div id="high-engagement-tags-list" class="tag-badge-list">
+                        <!-- Injected -->
+                      </div>
                     </div>
+                    <!-- Low Engagement -->
+                    <div class="quartile-box bg-rose">
+                      <div class="quartile-header">
+                        <span id="q25-label" class="q-badge bg-rose-badge">Bottom 25% (≤ 0 Eng)</span>
+                        <span id="q25-count" class="q-count text-rose">0 Tags</span>
+                      </div>
+                      <div id="low-engagement-tags-list" class="tag-badge-list">
+                        <!-- Injected -->
+                      </div>
+                    </div>
+                    <p class="quartiles-note">* Ratio tags represent (high-performing posts) / (total posts using the tag).</p>
                   </div>
+                </div>
 
-                  <div class="list-container">
-                    <h4 class="list-section-title text-emerald">Niche Candidates to Test</h4>
-                    <div id="test-candidates-list" class="tag-badge-list">
-                      <!-- tags injected here -->
+                <!-- Card 3: AI Strategy -->
+                <div class="hashtag-card flex-col border-indigo">
+                  <div class="hashtag-card-header">
+                    <div>
+                      <h3 class="panel-subtitle text-indigo flex-center gap-1">
+                        <i data-lucide="sparkles" class="text-indigo animate-pulse"></i>
+                        Gemini AI Hashtag Strategy
+                      </h3>
+                      <p class="panel-subdesc">Key performance analysis & growth points</p>
+                    </div>
+                    <button id="copy-strategy-btn" class="copy-btn">
+                      <i data-lucide="copy" class="btn-icon-small"></i>
+                      <span>Copy Strategy</span>
+                    </button>
+                  </div>
+                  <div class="markdown-scroll-container">
+                    <div id="hashtag-ai-markdown" class="markdown-content">
+                      <!-- Dynamic Markdown Injected Here -->
                     </div>
                   </div>
                 </div>
+
               </div>
+
+              <!-- ROW 2: Kill List and Try These Recommendations -->
+              <div class="hashtag-row-2">
+                
+                <!-- Column 1: Kill-List -->
+                <div class="hashtag-card flex-col border-rose-accent">
+                  <div class="hashtag-card-header border-b">
+                    <div>
+                      <h3 class="panel-subtitle text-rose-accent flex-center gap-1">
+                        <i data-lucide="alert-circle" class="text-rose-accent animate-pulse"></i>
+                        Algorithmic Friction Warnings (Kill-List)
+                      </h3>
+                      <p class="panel-subdesc">High-priority reach suppression risk tags to drop immediately.</p>
+                    </div>
+                  </div>
+                  <div id="kill-list-container" class="kill-list-scroll-container">
+                    <!-- Injected -->
+                  </div>
+                  <div class="card-footer">
+                    Purge anchors to prevent automated shadowbans or reach choking.
+                  </div>
+                </div>
+
+                <!-- Column 2: Try These Suggestions -->
+                <div class="hashtag-card flex-col border-indigo-accent">
+                  <div class="hashtag-card-header border-b">
+                    <div>
+                      <h3 class="panel-subtitle text-indigo-accent flex-center gap-1">
+                        <i data-lucide="sparkles" class="text-indigo-accent animate-pulse"></i>
+                        Missing High-Volume Targets (Try These)
+                      </h3>
+                      <p class="panel-subdesc">Tap to copy niche recommendations.</p>
+                    </div>
+                  </div>
+                  <div id="try-these-container" class="try-these-scroll-container">
+                    <!-- Injected -->
+                  </div>
+                  <div class="card-footer">
+                    Confirmations feature automated inline check animations.
+                  </div>
+                </div>
+
+              </div>
+
             </div>
 
             <!-- RIVAL COMPETITOR ANALYSIS SECTION -->
