@@ -343,6 +343,12 @@ function displayDashboard(rawData) {
   // 3. Render Chart.js Graphics
   renderCharts(rawData);
   
+  // 3.1. Render Format Performance Battle
+  renderFormatPerformanceBattle(data);
+  
+  // 3.2. Render Niche Benchmark
+  renderNicheBenchmark(data);
+  
   // 3.5. Render Median Metrics and Peak/Worst posts
   renderMedianMetricsAndBestWorst(data);
   
@@ -1466,5 +1472,159 @@ function parseMarkdown(mdText) {
   // Clean up remaining newlines with line breaks
   html = html.replace(/\n/g, '<br>');
   return html;
+}
+
+// ─── RENDERING FOR FORMAT PERFORMANCE BATTLE ───
+function renderFormatPerformanceBattle(data) {
+  const container = document.getElementById('format-battle-container');
+  if (!container) return;
+
+  const performanceSplit = data.performance_split;
+  if (!performanceSplit) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+
+  const badgeContainer = document.getElementById('format-battle-badge-container');
+  if (badgeContainer) {
+    const reelsInteractions = (performanceSplit.reels?.total_interactions || 0);
+    const staticInteractions = (performanceSplit.static?.total_interactions || 0);
+    
+    if (reelsInteractions > staticInteractions) {
+      badgeContainer.innerHTML = `
+        <span class="format-battle-badge reels-won">
+          🔥 Reels Driving Reach
+        </span>
+      `;
+    } else {
+      badgeContainer.innerHTML = `
+        <span class="format-battle-badge static-won">
+          🖼️ Static Content Winning
+        </span>
+      `;
+    }
+  }
+
+  // Reels stats
+  const reelsCount = performanceSplit.reels?.count || 0;
+  const reelsLikes = performanceSplit.reels?.average_likes || 0;
+  const reelsComments = performanceSplit.reels?.average_comments || 0;
+  document.getElementById('reels-post-count').textContent = reelsCount;
+  document.getElementById('reels-avg-likes').textContent = reelsLikes.toLocaleString();
+  document.getElementById('reels-avg-comments').textContent = `${reelsComments.toLocaleString()} Avg Comments`;
+
+  // Static stats
+  const staticCount = performanceSplit.static?.count || 0;
+  const staticLikes = performanceSplit.static?.average_likes || 0;
+  const staticComments = performanceSplit.static?.average_comments || 0;
+  document.getElementById('static-post-count').textContent = staticCount;
+  document.getElementById('static-avg-likes').textContent = staticLikes.toLocaleString();
+  document.getElementById('static-avg-comments').textContent = `${staticComments.toLocaleString()} Avg Comments`;
+
+  // Reels top posts list
+  const reelsTopContainer = document.getElementById('reels-top-posts');
+  if (reelsTopContainer) {
+    const reelsTop = performanceSplit.reels?.top_posts || [];
+    if (reelsTop.length === 0) {
+      reelsTopContainer.innerHTML = `<span style="font-size: 11px; color: var(--color-zinc-400); font-style: italic; text-align: center; display: block; padding: 12px 0;">No Reels posts</span>`;
+    } else {
+      reelsTopContainer.innerHTML = reelsTop.map((post, i) => `
+        <a href="${post.url || '#'}" target="_blank" class="format-post-item">
+          <span class="format-post-name">
+            <i data-lucide="external-link"></i>
+            ${post.index || `Post ${i + 1}`}
+          </span>
+          <span class="format-post-stats">
+            <span>${(post.likes || 0).toLocaleString()} ❤️</span>
+            <span>${(post.comments || 0).toLocaleString()} 💬</span>
+          </span>
+        </a>
+      `).join('');
+    }
+  }
+
+  // Static top posts list
+  const staticTopContainer = document.getElementById('static-top-posts');
+  if (staticTopContainer) {
+    const staticTop = performanceSplit.static?.top_posts || [];
+    if (staticTop.length === 0) {
+      staticTopContainer.innerHTML = `<span style="font-size: 11px; color: var(--color-zinc-400); font-style: italic; text-align: center; display: block; padding: 12px 0;">No Static posts</span>`;
+    } else {
+      staticTopContainer.innerHTML = staticTop.map((post, i) => `
+        <a href="${post.url || '#'}" target="_blank" class="format-post-item">
+          <span class="format-post-name">
+            <i data-lucide="external-link"></i>
+            ${post.index || `Post ${i + 1}`}
+          </span>
+          <span class="format-post-stats">
+            <span>${(post.likes || 0).toLocaleString()} ❤️</span>
+            <span>${(post.comments || 0).toLocaleString()} 💬</span>
+          </span>
+        </a>
+      `).join('');
+    }
+  }
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+// ─── RENDERING FOR NICHE BENCHMARK ───
+function renderNicheBenchmark(data) {
+  const card = document.getElementById('niche-benchmark-card');
+  if (!card) return;
+
+  const benchmark = data.niche_benchmark_data;
+  if (!benchmark) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+
+  // Update text values
+  document.getElementById('benchmark-tier-label').textContent = benchmark.tier_label || 'N/A';
+  document.getElementById('benchmark-target-baseline').textContent = (benchmark.target_baseline || 0).toFixed(1);
+  document.getElementById('benchmark-performance-index').textContent = `${benchmark.index_score || 0}%`;
+  
+  // Formulas
+  const actualER = data.calculated_metrics?.engagement_rate || data.engagement_rate || 0;
+  document.getElementById('benchmark-actual-er').textContent = actualER.toFixed(1);
+  document.getElementById('benchmark-baseline-er').textContent = (benchmark.target_baseline || 0).toFixed(1);
+
+  // Status Badge
+  const statusBadge = document.getElementById('benchmark-status-badge');
+  if (statusBadge) {
+    statusBadge.classList.remove('above', 'below');
+    if ((benchmark.index_score || 0) >= 100) {
+      statusBadge.textContent = '🚀 Above Average';
+      statusBadge.classList.add('above');
+    } else {
+      statusBadge.textContent = '⚠️ Below Average';
+      statusBadge.classList.add('below');
+    }
+  }
+
+  // Positioning the pin (gauge left %)
+  const pin = document.getElementById('gauge-pin');
+  if (pin) {
+    const indexScore = benchmark.index_score || 0;
+    // Map 0 - 200% index score to 5% - 95% visual width of track
+    const percentage = Math.max(5, Math.min(95, (indexScore / 200) * 100));
+    pin.style.left = `${percentage}%`;
+    
+    // Toggle pin color
+    pin.classList.remove('bg-emerald', 'bg-rose');
+    if (indexScore >= 100) {
+      pin.classList.add('bg-emerald');
+    } else {
+      pin.classList.add('bg-rose');
+    }
+  }
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 

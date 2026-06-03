@@ -213,19 +213,107 @@
                 <div class="metric-footer text-rose">Estimated ghost/bot follower pool</div>
               </div>
             </div>
+            
+            <!-- FORMAT PERFORMANCE BATTLE (HIDDEN BY DEFAULT) -->
+            <div id="format-battle-container" class="format-battle-card hidden">
+              <div class="format-battle-header">
+                <h3 class="format-battle-title">Format Performance Battle</h3>
+                <div id="format-battle-badge-container">
+                  <!-- Dynamic badge injected here -->
+                </div>
+              </div>
+              <div class="format-battle-grid">
+                <!-- REELS COLUMN -->
+                <div class="format-column reels">
+                  <div class="format-stats-summary">
+                    <span class="format-label">Reels (<span id="reels-post-count">0</span> Posts)</span>
+                    <span id="reels-avg-likes" class="format-avg-likes">0</span>
+                    <span class="format-avg-label text-pink">Avg Likes</span>
+                    <span id="reels-avg-comments" class="format-avg-comments">0 Avg Comments</span>
+                  </div>
+                  <div id="reels-top-posts" class="format-top-posts">
+                    <!-- Injected top Reels list -->
+                  </div>
+                </div>
+                <!-- STATIC COLUMN -->
+                <div class="format-column static">
+                  <div class="format-stats-summary">
+                    <span class="format-label">Static (<span id="static-post-count">0</span> Posts)</span>
+                    <span id="static-avg-likes" class="format-avg-likes">0</span>
+                    <span class="format-avg-label text-blue">Avg Likes</span>
+                    <span id="static-avg-comments" class="format-avg-comments">0 Avg Comments</span>
+                  </div>
+                  <div id="static-top-posts" class="format-top-posts">
+                    <!-- Injected top Static list -->
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- CHARTS GRAPHICS WRAPPER -->
             <div class="charts-section">
-              <div class="chart-card">
-                <h3 class="chart-title">Audience Growth Timeline</h3>
-                <div class="chart-container">
-                  <canvas id="trend-chart"></canvas>
-                  <div id="trend-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
-                    <span class="placeholder-emoji">📈</span>
-                    <p class="placeholder-title">Establishing your growth baseline...</p>
-                    <p class="placeholder-desc">Search this profile again tomorrow to plot the velocity trend curve automatically!</p>
+              
+              <!-- BENCHMARK & TIMELINE GRID -->
+              <div class="benchmark-timeline-grid">
+                
+                <!-- BENCHMARK VS NICHE CARD (HIDDEN BY DEFAULT) -->
+                <div id="niche-benchmark-card" class="benchmark-card hidden">
+                  <div class="benchmark-header">
+                    <h3 class="benchmark-title">
+                      <i data-lucide="activity" class="benchmark-icon"></i>
+                      Benchmark vs Niche
+                    </h3>
+                    <span id="benchmark-tier-label" class="benchmark-tier-badge">Micro</span>
+                  </div>
+                  
+                  <div class="benchmark-body">
+                    <!-- Relative Gauge Track -->
+                    <div class="gauge-track-container">
+                      <div class="gauge-track">
+                        <!-- Center anchor line -->
+                        <div class="gauge-center-anchor"></div>
+                        <div class="gauge-center-label">Avg (<span id="benchmark-target-baseline">0</span>%)</div>
+                        
+                        <!-- Floating pin indicator -->
+                        <div id="gauge-pin" class="gauge-pin bg-emerald"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="benchmark-footer-metrics">
+                      <span class="benchmark-score-text">
+                        Performance Index: <span id="benchmark-performance-index" class="font-black">0%</span>
+                      </span>
+                      <span id="benchmark-status-badge" class="benchmark-status-badge">🚀 Above Average</span>
+                    </div>
+                    
+                    <!-- Calculation Formula -->
+                    <div class="benchmark-formula-box">
+                      <div class="formula-title">Formula: (Actual Engagement Rate / Target Baseline) × 100</div>
+                      <div class="formula-values">
+                        <span><strong>Actual:</strong> <span id="benchmark-actual-er">0</span>% (Profile's real rate)</span>
+                        <span class="formula-dot">•</span>
+                        <span><strong>Baseline:</strong> <span id="benchmark-baseline-er">0</span>% (Expected standard for this tier)</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                <!-- AUDIENCE GROWTH TIMELINE -->
+                <div class="chart-card">
+                  <h3 class="chart-title">
+                    <i data-lucide="trending-up" class="timeline-icon"></i>
+                    Audience Growth Timeline
+                  </h3>
+                  <div class="chart-container">
+                    <canvas id="trend-chart"></canvas>
+                    <div id="trend-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
+                      <span class="placeholder-emoji">📈</span>
+                      <p class="placeholder-title">Establishing your growth baseline...</p>
+                      <p class="placeholder-desc">Search this profile again tomorrow to plot the velocity trend curve automatically!</p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               <div class="chart-grid-two">
