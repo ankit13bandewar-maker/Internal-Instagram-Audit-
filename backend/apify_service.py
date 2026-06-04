@@ -473,18 +473,22 @@ def scrape_latest_15_posts(profile_url: str) -> list:
 
     Flow:
       1. Try to scrape live via public Instagram web_profile_info API. Fast, free, real data.
-      2. If that fails (e.g. rate-limited/blocked), try to scrape live via Apify.
-      3. If live scrape fails, fall back to local CSV cache.
-      4. If CSV cache fails or is empty, dynamically generate realistic, deterministic mock posts.
+      2. If that gets >= 15 posts, return them.
+      3. If that gets < 15 posts, try Apify to get 15 posts.
+      4. If Apify succeeds, return 15 posts.
+      5. If Apify fails, fall back to the posts we got from public Instagram API.
+      6. If that also failed, fall back to local CSV cache.
+      7. If CSV cache fails/empty, dynamically generate realistic mock posts (exactly 15).
     """
     username = _extract_username(profile_url)
+    public_api_posts = None
 
     # ── Step 1: Instagram public API scrape (New, fast, real) ──
     try:
-        posts = _scrape_via_instagram_api(profile_url)
-        if posts:
-            _save_to_csv(profile_url, posts)
-            return posts
+        public_api_posts = _scrape_via_instagram_api(profile_url)
+        if public_api_posts and len(public_api_posts) >= 15:
+            _save_to_csv(profile_url, public_api_posts)
+            return public_api_posts
     except FileNotFoundError as e:
         print(f"[Profile Not Found] '{username}' does not exist (404). Propagating error.")
         raise e
@@ -495,13 +499,23 @@ def scrape_latest_15_posts(profile_url: str) -> list:
     try:
         print(f"[Live] Fetching 15 posts fresh from Apify for '{username}'...")
         posts = _scrape_via_apify(profile_url)
-        if posts:
+        if posts and len(posts) >= 15:
             _save_to_csv(profile_url, posts)
             return posts
+        elif posts:
+            if not public_api_posts or len(posts) > len(public_api_posts):
+                _save_to_csv(profile_url, posts)
+                return posts
     except Exception as e:
-        print(f"[Apify Live Failed] for '{username}': {e}. Trying CSV cache fallback...")
+        print(f"[Apify Live Failed] for '{username}': {e}. Trying public API posts or CSV cache fallback...")
 
-    # ── Step 3: CSV cache fallback ──
+    # ── Step 3: Fall back to public API posts if we have them ──
+    if public_api_posts:
+        print(f"[Fallback] Using {len(public_api_posts)} posts from Instagram public API.")
+        _save_to_csv(profile_url, public_api_posts)
+        return public_api_posts
+
+    # ── Step 4: CSV cache fallback ──
     try:
         posts = _load_csv_for_profile(username)
         if posts:
@@ -509,7 +523,7 @@ def scrape_latest_15_posts(profile_url: str) -> list:
     except Exception as e:
         print(f"[CSV Fallback Failed] for '{username}': {e}. Trying dynamic mock fallback...")
 
-    # ── Step 4: Dynamic authentic mock fallback ──
+    # ── Step 5: Dynamic authentic mock fallback ──
     print(f"[Fallback Dynamic] Generating deterministic high-fidelity metrics for '{username}'...")
     posts = _generate_highly_authentic_posts(profile_url)
     return posts

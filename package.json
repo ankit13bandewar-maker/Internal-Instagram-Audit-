@@ -3,8 +3,8 @@
   "version": "1.1.0",
   "private": true,
   "scripts": {
-    "api": "cd backend && uvicorn main:app --reload --port 8000 --host 0.0.0.0",
-    "dev": "npx concurrently \"npm run api\" \"npm --prefix \\\"frontend - Next.js\\\" run dev\"",
-    "dev:vanilla": "npx concurrently \"npm run api\" \"npx -y serve -l 5000 frontend-vanilla\""
+    "api": "uvicorn main:app --reload --port 8000 --host 0.0.0.0 --app-dir backend",
+    "next": "npm --prefix \"frontend - Next.js\" run dev",
+    "vanilla": "npx -y serve -l 5000 frontend-vanilla"
   }
 }
