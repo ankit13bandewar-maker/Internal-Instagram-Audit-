@@ -17,17 +17,7 @@ services:
       - key: SUPABASE_KEY
         sync: false
 
-  # 2. Next.js Frontend Service
-  - type: web
-    name: premium-dashboard
-    runtime: node
-    rootDir: premium-dashboard
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - key: NODE_VERSION
-        value: 20.x
-      - key: FASTAPI_URL
-        fromService:
-          name: instagram-account-audit-api
-          property: hostport
+  # 2. Vanilla HTML/CSS/JS Frontend
+  - type: static
+    name: client-audit-vanilla-frontend
+    publishPath: frontend-vanilla
