@@ -1,575 +1,984 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-palette="lime">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AUDIT TOOL - Instagram Growth Analytics</title>
-  <!-- Google Fonts: Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <!-- Chart.js for High-Fidelity Charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Vanilla CSS Design System -->
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AURA Audit — BloomX · @horocosmo</title>
+<link rel="stylesheet" href="aura-audit.css" />
 </head>
 <body>
 
-  <!-- BACKGROUND PASTEL GLOW ORBS -->
-  <div class="glow-orb orb-1"></div>
-  <div class="glow-orb orb-2"></div>
+<div class="app">
 
-  <div class="app-layout">
-    
-    <!-- SIDEBAR PANEL: AUDIT HISTORY -->
-    <aside class="sidebar">
-      <h2 class="sidebar-title">Audit History</h2>
-      <div id="history-list" class="history-list">
-        <!-- History items dynamically injected here -->
-        <div class="history-empty">
-          <p>No history found</p>
+  <!-- ════════════════ SIDEBAR ════════════════ -->
+  <aside class="sidebar">
+    <div class="sb-head">
+      <span class="eyebrow">Recent Checks</span>
+    </div>
+    <div class="sb-scroll">
+
+      <div class="acct active">
+        <div class="av">HO</div>
+        <div class="acct-meta">
+          <div class="h">@horocosmo</div>
+          <div class="s">57.3k followers</div>
+        </div>
+        <div class="er up">3.75%</div>
+      </div>
+
+      <div class="acct">
+        <div class="av">NA</div>
+        <div class="acct-meta">
+          <div class="h">@nasa</div>
+          <div class="s">104.3M followers</div>
+        </div>
+        <div class="er dn">0.28%</div>
+      </div>
+
+      <div class="acct">
+        <div class="av">VK</div>
+        <div class="acct-meta">
+          <div class="h">@virat.kohli</div>
+          <div class="s">271M followers</div>
+        </div>
+        <div class="er up">4.25%</div>
+      </div>
+
+      <div class="acct">
+        <div class="av">JA</div>
+        <div class="acct-meta">
+          <div class="h">@jaimadaanofficial</div>
+          <div class="s">1.01M followers</div>
+        </div>
+        <div class="er dn">0.31%</div>
+      </div>
+
+      <div class="acct">
+        <div class="av">TH</div>
+        <div class="acct-meta">
+          <div class="h">@thenidhichaudhary</div>
+          <div class="s">831.1k followers</div>
+        </div>
+        <div class="er up">5.63%</div>
+      </div>
+
+      <div class="acct">
+        <div class="av">BL</div>
+        <div class="acct-meta">
+          <div class="h">@bloomers_of_bloom</div>
+          <div class="s">389 followers</div>
+        </div>
+        <div class="er up">5.66%</div>
+      </div>
+
+      <div class="acct">
+        <div class="av">AS</div>
+        <div class="acct-meta">
+          <div class="h">@astroarunpandit</div>
+          <div class="s">3.4M followers</div>
+        </div>
+        <div class="er dn">0.23%</div>
+      </div>
+
+      <div class="acct">
+        <div class="av">BX</div>
+        <div class="acct-meta">
+          <div class="h">@bloomxsolutions</div>
+          <div class="s">1.5k followers</div>
+        </div>
+        <div class="er mid">1.31%</div>
+      </div>
+
+    </div>
+    <div class="sb-brand">
+      <div class="logo">
+        <div class="sb-mark">A</div>
+        <div>
+          <div class="sb-name">AURA Audit</div>
         </div>
       </div>
-    </aside>
-
-    <!-- RIGHT CONTAINER -->
-    <div class="main-wrapper">
-      
-      <!-- HEADER ROW -->
-      <header class="app-header">
-        <div class="header-logo-group">
-          <div class="logo-box">
-            <i data-lucide="sparkles" class="logo-icon"></i>
-          </div>
-          <div class="header-text">
-            <h1 class="header-title">AUDIT TOOL</h1>
-            <p class="header-subtitle">Instagram Growth Analytics & Gemini Diagnostic Auditing</p>
-          </div>
-        </div>
-      </header>
-
-      <!-- MAIN CONTENT WRAPPER -->
-      <main class="content-container">
-
-        <!-- SEARCH BAR PANEL -->
-        <section class="search-panel">
-          <div class="search-info">
-            <h2 class="search-title">Instagram Growth Analytics & Diagnostic Auditing</h2>
-            <p class="search-desc">Paste any Instagram profile URL below to instantly analyze their engagement rate, tag strategy, and post performance.</p>
-          </div>
-          <form id="search-form" class="search-form">
-            <div class="input-group">
-              <label class="input-label">Target Instagram Profile URL</label>
-              <div class="input-wrapper">
-                <i data-lucide="search" class="search-input-icon"></i>
-                <input 
-                  type="url" 
-                  id="profile-url" 
-                  placeholder="paste the url here" 
-                  required
-                />
-              </div>
-            </div>
-            <button type="submit" id="submit-btn" class="submit-btn">
-              <i data-lucide="sparkles" class="btn-icon"></i>
-              <span>Perform Deep Audit</span>
-            </button>
-          </form>
-        </section>
-
-        <!-- ERROR MESSAGE PANEL (HIDDEN BY DEFAULT) -->
-        <div id="error-panel" class="error-panel hidden">
-          <i data-lucide="alert-circle" class="error-icon"></i>
-          <div class="error-content">
-            <span class="error-title">Connection Fallback Active</span>
-            <p id="error-message" class="error-text"></p>
-          </div>
-        </div>
-
-        <!-- DYNAMIC CARD AREA: LOADER, EMPTY STATE, OR DASHBOARD -->
-        <div id="workspace-panel">
-          
-          <!-- EMPTY STATE CARD -->
-          <div id="empty-state" class="workspace-card empty-state">
-            <i data-lucide="activity" class="pulse-icon"></i>
-            <h3 class="state-title">Waiting for Data</h3>
-            <p class="state-desc">Enter an Instagram profile URL to generate client metrics and engagement analytics.</p>
-          </div>
-
-          <!-- INLINE LOADER CARD (HIDDEN BY DEFAULT) -->
-          <div id="loader-state" class="workspace-card loader-state hidden">
-            <div class="loader-circle-wrapper">
-              <svg class="loader-svg" viewBox="0 0 128 128">
-                <!-- Background track -->
-                <circle cx="64" cy="64" r="50" class="track-circle" stroke-width="8" />
-                <!-- Animated progress circle -->
-                <circle cx="64" cy="64" r="50" id="progress-circle" class="progress-circle" stroke-width="8" />
-              </svg>
-              <div class="loader-percentage-group">
-                <span id="loader-pct" class="loader-pct">0%</span>
-                <span class="loader-label">Analyzing</span>
-              </div>
-            </div>
-            <div class="loader-text-group">
-              <h3 id="loader-status" class="loader-status">Connecting to secure Instagram API...</h3>
-              <p class="loader-subtext">Please wait, this may take a few seconds</p>
-            </div>
-          </div>
-
-          <!-- DASHBOARD CONTENT PANEL (HIDDEN BY DEFAULT) -->
-          <div id="dashboard-state" class="dashboard-state hidden">
-            
-            <!-- BRAND AUDIT DETAILS HERO PANEL -->
-            <div class="hero-panel">
-              <div class="profile-meta-group">
-                <div class="profile-avatar">
-                  <span id="profile-initials">--</span>
-                </div>
-                <div class="profile-info">
-                  <div class="profile-name-row">
-                    <h2 id="profile-handle" class="profile-handle">@username</h2>
-                    <a id="profile-link" href="#" target="_blank" class="profile-link">
-                      <i data-lucide="external-link"></i>
-                    </a>
-                  </div>
-                  <div id="badge-container">
-                    <span class="live-audit-badge">
-                      <i data-lucide="zap"></i>
-                      Live Audit
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="hero-stats-group">
-                <div class="hero-stat-card bg-indigo">
-                  <span class="hero-stat-label">Audited</span>
-                  <span id="stat-posts-count" class="hero-stat-value">0 Posts</span>
-                </div>
-                <div class="hero-stat-card bg-orange">
-                  <span class="hero-stat-label">Total Likes (Audited)</span>
-                  <span id="stat-total-likes" class="hero-stat-value">0</span>
-                </div>
-                <div class="hero-stat-card bg-pink">
-                  <span class="hero-stat-label">Total Comments (Audited)</span>
-                  <span id="stat-total-comments" class="hero-stat-value">0</span>
-                </div>
-                <div class="hero-stat-card bg-blue">
-                  <span class="hero-stat-label">Total Followers</span>
-                  <span id="stat-total-followers" class="hero-stat-value">0</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- CORE METRICS CARDS GRID -->
-            <div class="metrics-grid">
-              <!-- KPI Card 1: Audience Authenticity -->
-              <div id="kpi-authenticity-card" class="metric-card">
-                <div class="metric-header">
-                  <span class="metric-title">Audience Authenticity</span>
-                  <div id="kpi-authenticity-icon-box" class="metric-icon-box">
-                    <i data-lucide="shield-check"></i>
-                  </div>
-                </div>
-                <div id="kpi-authenticity" class="metric-value">0%</div>
-                <div class="metric-footer">Percentage of real, active followers</div>
-              </div>
-
-              <!-- KPI Card 2: Engagement Rate -->
-              <div class="metric-card">
-                <div class="metric-header">
-                  <span class="metric-title">Engagement Rate</span>
-                  <div class="metric-icon-box bg-purple">
-                    <i data-lucide="activity"></i>
-                  </div>
-                </div>
-                <div id="kpi-er" class="metric-value">0%</div>
-                <div class="metric-footer">Likes + comments to followers ratio</div>
-              </div>
-
-              <!-- KPI Card 3: Posting Frequency -->
-              <div class="metric-card">
-                <div class="metric-header">
-                  <span class="metric-title">Posting Velocity</span>
-                  <div class="metric-icon-box bg-green">
-                    <i data-lucide="clock"></i>
-                  </div>
-                </div>
-                <div id="kpi-velocity" class="metric-value">0/day</div>
-                <div class="metric-footer">Average posts published daily</div>
-              </div>
-
-              <!-- KPI Card 4: Inactive Followers -->
-              <div class="metric-card">
-                <div class="metric-header">
-                  <span class="metric-title">Inactive Followers</span>
-                  <div class="metric-icon-box bg-rose">
-                    <i data-lucide="shield-alert"></i>
-                  </div>
-                </div>
-                <div id="kpi-inactive" class="metric-value">0%</div>
-                <div class="metric-footer text-rose">Estimated ghost/bot follower pool</div>
-              </div>
-            </div>
-            
-            <!-- FORMAT PERFORMANCE BATTLE (HIDDEN BY DEFAULT) -->
-            <div id="format-battle-container" class="format-battle-card hidden">
-              <div class="format-battle-header">
-                <h3 class="format-battle-title">Format Performance Battle</h3>
-                <div id="format-battle-badge-container">
-                  <!-- Dynamic badge injected here -->
-                </div>
-              </div>
-              <div class="format-battle-grid">
-                <!-- REELS COLUMN -->
-                <div class="format-column reels">
-                  <div class="format-stats-summary">
-                    <span class="format-label">Reels (<span id="reels-post-count">0</span> Posts)</span>
-                    <span id="reels-avg-likes" class="format-avg-likes">0</span>
-                    <span class="format-avg-label text-pink">Avg Likes</span>
-                    <span id="reels-avg-comments" class="format-avg-comments">0 Avg Comments</span>
-                  </div>
-                  <div id="reels-top-posts" class="format-top-posts">
-                    <!-- Injected top Reels list -->
-                  </div>
-                </div>
-                <!-- STATIC COLUMN -->
-                <div class="format-column static">
-                  <div class="format-stats-summary">
-                    <span class="format-label">Static (<span id="static-post-count">0</span> Posts)</span>
-                    <span id="static-avg-likes" class="format-avg-likes">0</span>
-                    <span class="format-avg-label text-blue">Avg Likes</span>
-                    <span id="static-avg-comments" class="format-avg-comments">0 Avg Comments</span>
-                  </div>
-                  <div id="static-top-posts" class="format-top-posts">
-                    <!-- Injected top Static list -->
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- CHARTS GRAPHICS WRAPPER -->
-            <div class="charts-section">
-              
-              <!-- BENCHMARK & TIMELINE GRID -->
-              <div class="benchmark-timeline-grid">
-                
-                <!-- BENCHMARK VS NICHE CARD (HIDDEN BY DEFAULT) -->
-                <div id="niche-benchmark-card" class="benchmark-card hidden">
-                  <div class="benchmark-header">
-                    <h3 class="benchmark-title">
-                      <i data-lucide="activity" class="benchmark-icon"></i>
-                      Benchmark vs Niche
-                    </h3>
-                    <span id="benchmark-tier-label" class="benchmark-tier-badge">Micro</span>
-                  </div>
-                  
-                  <div class="benchmark-body">
-                    <!-- Relative Gauge Track -->
-                    <div class="gauge-track-container">
-                      <div class="gauge-track">
-                        <!-- Center anchor line -->
-                        <div class="gauge-center-anchor"></div>
-                        <div class="gauge-center-label">Avg (<span id="benchmark-target-baseline">0</span>%)</div>
-                        
-                        <!-- Floating pin indicator -->
-                        <div id="gauge-pin" class="gauge-pin bg-emerald"></div>
-                      </div>
-                    </div>
-                    
-                    <div class="benchmark-footer-metrics">
-                      <span class="benchmark-score-text">
-                        Performance Index: <span id="benchmark-performance-index" class="font-black">0%</span>
-                      </span>
-                      <span id="benchmark-status-badge" class="benchmark-status-badge">🚀 Above Average</span>
-                    </div>
-                    
-                    <!-- Calculation Formula -->
-                    <div class="benchmark-formula-box">
-                      <div class="formula-title">Formula: (Actual Engagement Rate / Target Baseline) × 100</div>
-                      <div class="formula-values">
-                        <span><strong>Actual:</strong> <span id="benchmark-actual-er">0</span>% (Profile's real rate)</span>
-                        <span class="formula-dot">•</span>
-                        <span><strong>Baseline:</strong> <span id="benchmark-baseline-er">0</span>% (Expected standard for this tier)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- AUDIENCE GROWTH TIMELINE -->
-                <div class="chart-card">
-                  <h3 class="chart-title">
-                    <i data-lucide="trending-up" class="timeline-icon"></i>
-                    Audience Growth Timeline
-                  </h3>
-                  <div class="chart-container">
-                    <canvas id="trend-chart"></canvas>
-                    <div id="trend-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
-                      <span class="placeholder-emoji">📈</span>
-                      <p class="placeholder-title">Establishing your growth baseline...</p>
-                      <p class="placeholder-desc">Search this profile again tomorrow to plot the velocity trend curve automatically!</p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              <div class="chart-grid-two">
-                <div class="chart-card">
-                  <h3 class="chart-title">Reels Views Distribution</h3>
-                  <div class="chart-container">
-                    <canvas id="reels-chart"></canvas>
-                    <div id="reels-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
-                      <span class="placeholder-emoji">🎬</span>
-                      <p class="placeholder-title">No Reels Detected</p>
-                      <p class="placeholder-desc">No Reels were found in the 15 audited posts for this profile.</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="chart-card">
-                  <h3 class="chart-title">Reach Performance Distribution</h3>
-                  <div class="chart-container">
-                    <canvas id="reach-chart"></canvas>
-                    <div id="reach-chart-placeholder" class="chart-placeholder hidden animate-in fade-in">
-                      <span class="placeholder-emoji">🔍</span>
-                      <p class="placeholder-title">No Video Content Detected</p>
-                      <p class="placeholder-desc">No video or short-form Reels were found in the 15 audited posts for this profile.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- MEDIAN & AVERAGE METRICS ROW -->
-            <div class="median-metrics-grid">
-              <div class="median-metric-card">
-                <span id="median-likes-value" class="median-metric-value">0</span>
-                <span class="median-metric-label text-indigo">Median Likes</span>
-                <span class="median-metric-desc">Core baseline performance metric.</span>
-              </div>
-              <div class="median-metric-card">
-                <span id="median-comments-value" class="median-metric-value">0</span>
-                <span class="median-metric-label text-rose">Median Comments</span>
-                <span class="median-metric-desc">Baseline community engagement depth.</span>
-              </div>
-              <div class="median-metric-card">
-                <span id="average-likes-value" class="median-metric-value">0</span>
-                <span class="median-metric-label text-teal">Average Likes</span>
-                <span class="median-metric-desc">Overall profile reach metric across sample.</span>
-              </div>
-              <div class="median-metric-card position-relative">
-                <div class="median-metric-header">
-                  <span class="median-metric-label text-amber">Day With Most Posts</span>
-                  <i data-lucide="activity" class="metric-icon-small"></i>
-                </div>
-                <span id="most-active-day-value" class="median-metric-value mt-3">N/A</span>
-              </div>
-            </div>
-
-            <!-- BEST VS WORST POSTS STACKED ROW -->
-            <div class="best-worst-container">
-              <div class="best-worst-row bg-emerald-light">
-                <div class="best-worst-meta">
-                  <span class="best-worst-badge bg-emerald">Peak Content</span>
-                  <span id="best-post-stats" class="best-worst-text">0 Likes · 0 Comments</span>
-                </div>
-                <a id="best-post-link" href="#" target="_blank" class="best-worst-link truncate">No URL available</a>
-              </div>
-              <div class="best-worst-row bg-orange-light">
-                <div class="best-worst-meta">
-                  <span class="best-worst-badge bg-orange">Lowest Traction</span>
-                  <span id="worst-post-stats" class="best-worst-text">0 Likes · 0 Comments</span>
-                </div>
-                <a id="worst-post-link" href="#" target="_blank" class="best-worst-link truncate">No URL available</a>
-              </div>
-            </div>
-
-            <!-- TWO-COLUMN AUDITED CONTENT FEED & DIAGNOSTIC VIEWER -->
-            <div class="feed-section-wrapper">
-              
-              <!-- LEFT FEED PANEL -->
-              <div class="feed-panel-card">
-                <div class="feed-header-border">
-                  <h3 class="feed-panel-title">
-                    <i data-lucide="award" class="feed-title-icon"></i>
-                    Audited Content Feed
-                  </h3>
-                  <p class="feed-panel-desc">Sorted descending by Likes performance</p>
-                </div>
-                <!-- Scrolling List -->
-                <div id="audited-posts-feed" class="feed-list-container custom-scrollbar">
-                  <!-- Dynamic items -->
-                </div>
-              </div>
-
-              <!-- RIGHT AUDIT DEEP-DIVE VIEWER -->
-              <div class="viewer-panel-card">
-                <div id="post-deep-dive-viewer" class="viewer-container">
-                  <!-- Dynamic details -->
-                  <div class="viewer-empty-state">
-                    <i data-lucide="sparkles" class="empty-sparkles-icon"></i>
-                    <h4 class="empty-viewer-title">No Post Selected</h4>
-                    <p class="empty-viewer-desc">Select an item in the feed to evaluate its AI diagnostic brief.</p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- HASHTAG INTELLIGENCE PANEL -->
-            <div class="hashtag-section">
-              <div class="hashtag-header-row">
-                <h2 class="hashtag-section-title">
-                  <i data-lucide="hash"></i>
-                  Hashtag Strategy Intelligence
-                </h2>
-              </div>
-
-              <!-- ROW 1: Matrix, Quartiles, and AI Strategy -->
-              <div class="hashtag-row-1">
-                
-                <!-- Card 1: Distribution Matrix -->
-                <div class="hashtag-card flex-col">
-                  <div class="hashtag-card-header">
-                    <div>
-                      <h3 class="panel-subtitle">🔮 Hashtag Distribution Matrix</h3>
-                      <p class="panel-subdesc">Usage ratios across audited posts</p>
-                    </div>
-                    <span class="live-badge">LIVE</span>
-                  </div>
-                  <div class="table-scroll-container">
-                    <table class="hashtag-matrix-table">
-                      <thead>
-                        <tr>
-                          <th>Hashtag</th>
-                          <th class="text-right">Usage Ratio</th>
-                        </tr>
-                      </thead>
-                      <tbody id="hashtag-matrix-body">
-                        <!-- Dynamically filled -->
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <!-- Card 2: Engagement Quartiles -->
-                <div class="hashtag-card flex-col">
-                  <div class="hashtag-card-header">
-                    <div>
-                      <h3 class="panel-subtitle">📈 Engagement Performance Quartiles</h3>
-                      <p class="panel-subdesc">Tags classified by historical engagement thresholds.</p>
-                    </div>
-                  </div>
-                  <div class="quartiles-body">
-                    <!-- High Engagement -->
-                    <div class="quartile-box bg-emerald">
-                      <div class="quartile-header">
-                        <span id="q75-label" class="q-badge bg-emerald-badge">Top 25% (≥ 0 Eng)</span>
-                        <span id="q75-count" class="q-count text-emerald">0 Tags</span>
-                      </div>
-                      <div id="high-engagement-tags-list" class="tag-badge-list">
-                        <!-- Injected -->
-                      </div>
-                    </div>
-                    <!-- Low Engagement -->
-                    <div class="quartile-box bg-rose">
-                      <div class="quartile-header">
-                        <span id="q25-label" class="q-badge bg-rose-badge">Bottom 25% (≤ 0 Eng)</span>
-                        <span id="q25-count" class="q-count text-rose">0 Tags</span>
-                      </div>
-                      <div id="low-engagement-tags-list" class="tag-badge-list">
-                        <!-- Injected -->
-                      </div>
-                    </div>
-                    <p class="quartiles-note">* Ratio tags represent (high-performing posts) / (total posts using the tag).</p>
-                  </div>
-                </div>
-
-                <!-- Card 3: AI Strategy -->
-                <div class="hashtag-card flex-col border-indigo">
-                  <div class="hashtag-card-header">
-                    <div>
-                      <h3 class="panel-subtitle text-indigo flex-center gap-1">
-                        <i data-lucide="sparkles" class="text-indigo animate-pulse"></i>
-                        Gemini AI Hashtag Strategy
-                      </h3>
-                      <p class="panel-subdesc">Key performance analysis & growth points</p>
-                    </div>
-                    <button id="copy-strategy-btn" class="copy-btn">
-                      <i data-lucide="copy" class="btn-icon-small"></i>
-                      <span>Copy Strategy</span>
-                    </button>
-                  </div>
-                  <div class="markdown-scroll-container">
-                    <div id="hashtag-ai-markdown" class="markdown-content">
-                      <!-- Dynamic Markdown Injected Here -->
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- ROW 2: Kill List and Try These Recommendations -->
-              <div class="hashtag-row-2">
-                
-                <!-- Column 1: Kill-List -->
-                <div class="hashtag-card flex-col border-rose-accent">
-                  <div class="hashtag-card-header border-b">
-                    <div>
-                      <h3 class="panel-subtitle text-rose-accent flex-center gap-1">
-                        <i data-lucide="alert-circle" class="text-rose-accent animate-pulse"></i>
-                        Algorithmic Friction Warnings (Kill-List)
-                      </h3>
-                      <p class="panel-subdesc">High-priority reach suppression risk tags to drop immediately.</p>
-                    </div>
-                  </div>
-                  <div id="kill-list-container" class="kill-list-scroll-container">
-                    <!-- Injected -->
-                  </div>
-                  <div class="card-footer">
-                    Purge anchors to prevent automated shadowbans or reach choking.
-                  </div>
-                </div>
-
-                <!-- Column 2: Try These Suggestions -->
-                <div class="hashtag-card flex-col border-indigo-accent">
-                  <div class="hashtag-card-header border-b">
-                    <div>
-                      <h3 class="panel-subtitle text-indigo-accent flex-center gap-1">
-                        <i data-lucide="sparkles" class="text-indigo-accent animate-pulse"></i>
-                        Missing High-Volume Targets (Try These)
-                      </h3>
-                      <p class="panel-subdesc">Tap to copy niche recommendations.</p>
-                    </div>
-                  </div>
-                  <div id="try-these-container" class="try-these-scroll-container">
-                    <!-- Injected -->
-                  </div>
-                  <div class="card-footer">
-                    Confirmations feature automated inline check animations.
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-            <!-- RIVAL COMPETITOR ANALYSIS SECTION -->
-            <div id="competitor-anchor">
-              <!-- Competitor Analysis rendered here dynamically -->
-            </div>
-
-          </div>
-
-        </div>
-
-      </main>
+      <div class="sb-ver">Made by BloomX</div>
     </div>
-  </div>
+  </aside>
 
-  <!-- Client-side Logic Controller -->
-  <script src="app.js"></script>
+  <!-- ════════════════ MAIN ════════════════ -->
+  <div class="main">
+
+    <!-- ── Topbar ── -->
+    <header class="topbar">
+      <div class="tb-inner">
+        <div class="tb-title">
+          <h1>See How an Instagram Account Is Really Doing</h1>
+          <p>Paste any profile link — we'll show what's working, what's not, and what to try next.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:280px;max-width:560px">
+          <div class="auditor" style="flex:1">
+            <label class="url-field">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.5 1.4"/>
+                <path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.5-1.4"/>
+              </svg>
+              <input type="text" value="https://www.instagram.com/horocosmo" spellcheck="false" aria-label="Instagram URL" />
+            </label>
+            <button class="btn btn-cta" id="run-btn" onclick="runAudit(this)">Check This Account</button>
+          </div>
+          <!-- palette switcher -->
+          <div class="pal-switcher" title="Switch colour theme">
+            <button class="pal-btn active" style="background:#C6FF3A" data-p="lime"   onclick="setPalette(this)" title="Lime Noir"></button>
+            <button class="pal-btn"        style="background:#9B7CFF" data-p="violet" onclick="setPalette(this)" title="Electric Violet"></button>
+            <button class="pal-btn"        style="background:#2BD27A" data-p="green"  onclick="setPalette(this)" title="Growth Green"></button>
+            <button class="pal-btn"        style="background:#16161C" data-p="light"  onclick="setPalette(this)" title="Daylight"></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Content ── -->
+    <div class="content">
+      <div class="wrap">
+
+        <!-- Profile strip -->
+        <div class="profile-strip">
+          <div class="ps-av">HO</div>
+          <div class="ps-handle">
+            <span>@horocosmo</span>
+            <span class="ps-verified">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l2.4 1.8 3-.2 1 2.8 2.6 1.6-.8 2.9.8 2.9-2.6 1.6-1 2.8-3-.2L12 22l-2.4-1.8-3 .2-1-2.8L3 16.2l.8-2.9L3 10.4l2.6-1.6 1-2.8 3 .2z"/>
+                <path d="M9.5 12.5l1.8 1.8 3.5-3.8" fill="none" stroke="var(--acc-ink)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </div>
+          <div class="ps-div"></div>
+          <div class="ps-stat">
+            <div class="k">Posts Looked At</div>
+            <div class="v">15</div>
+          </div>
+          <div class="ps-div"></div>
+          <div class="ps-stat">
+            <div class="k">Total Likes</div>
+            <div class="v">20,080</div>
+          </div>
+          <div class="ps-spacer"></div>
+          <span class="pill dot win">Checking Now</span>
+        </div>
+
+        <!-- ── 4 metric cards ── -->
+        <div class="grid g4">
+
+          <div class="card metric good">
+            <div class="metric-top">
+              <span class="label">How Much People Interact</span>
+              <span class="metric-ico">⚡</span>
+            </div>
+            <div class="big"><span class="cu" data-val="3.75">3.75</span><span class="u">%</span></div>
+            <div class="desc">Out of every 100 followers, about 4 like or comment on a post.</div>
+          </div>
+
+          <div class="card metric warnv">
+            <div class="metric-top">
+              <span class="label">Followers That Look Fake</span>
+              <span class="metric-ico">👻</span>
+            </div>
+            <div class="big"><span class="cu" data-val="7.5">7.5</span><span class="u">%</span></div>
+            <div class="desc">These accounts seem to be bots or people who never log in.</div>
+          </div>
+
+          <div class="card metric pos">
+            <div class="metric-top">
+              <span class="label">Followers That Look Real</span>
+              <span class="metric-ico">✓</span>
+            </div>
+            <div class="big"><span class="cu" data-val="92.5">92.5</span><span class="u">%</span></div>
+            <div class="desc">Real, active people who actually see and react to posts.</div>
+          </div>
+
+          <div class="card metric">
+            <div class="metric-top">
+              <span class="label">How Often They Post</span>
+              <span class="metric-ico">📅</span>
+            </div>
+            <div class="big"><span class="cu" data-val="0.1">0.1</span><span class="u">/day</span></div>
+            <div class="desc">On average, that's about one post every ten days.</div>
+          </div>
+
+        </div>
+
+        <!-- ── Videos vs Photos ── -->
+        <div class="card">
+          <div class="card-h">
+            <div class="t"><span class="ico">⚔</span> Videos vs. Photos — What Works Better?</div>
+            <span class="pill win">Photos Are Winning</span>
+          </div>
+          <div class="battle winR">
+
+            <div class="battle-side left">
+              <div class="bs-header">
+                <span class="bs-label">Reels (Videos) · 4 posts</span>
+              </div>
+              <div class="bs-num"><span class="cu" data-val="362">362</span></div>
+              <div class="bs-sub">Average likes per post</div>
+              <div class="bs-meta">7 comments each, on average</div>
+              <div class="post-list">
+                <div class="post-row" onclick="toast('Post 9 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 9</span>
+                  <span class="likes">&#10084;&#xFE0E; 713</span>
+                </div>
+                <div class="post-row" onclick="toast('Post 2 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 2</span>
+                  <span class="likes">&#10084;&#xFE0E; 698</span>
+                </div>
+                <div class="post-row" onclick="toast('Post 6 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 6</span>
+                  <span class="likes">&#10084;&#xFE0E; 75</span>
+                </div>
+                <div class="post-row" onclick="toast('Post 10 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 10</span>
+                  <span class="likes">&#10084;&#xFE0E; 61</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="vs-col">
+              <div class="vs-badge">VS</div>
+            </div>
+
+            <div class="battle-side right">
+              <div class="bs-header">
+                <span class="bs-label">Photos · 11 posts</span>
+                <span class="pill win" style="font-size:9px;padding:3px 9px">Winning</span>
+              </div>
+              <div class="bs-num"><span class="cu" data-val="1693">1,693</span></div>
+              <div class="bs-sub">Average likes per post</div>
+              <div class="bs-meta">2 comments each, on average</div>
+              <div class="post-list">
+                <div class="post-row" onclick="toast('Post 8 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 8</span>
+                  <span class="likes">&#10084;&#xFE0E; 5,728</span>
+                </div>
+                <div class="post-row" onclick="toast('Post 12 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 12</span>
+                  <span class="likes">&#10084;&#xFE0E; 4,963</span>
+                </div>
+                <div class="post-row" onclick="toast('Post 1 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 1</span>
+                  <span class="likes">&#10084;&#xFE0E; 3,871</span>
+                </div>
+                <div class="post-row" onclick="toast('Post 15 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 15</span>
+                  <span class="likes">&#10084;&#xFE0E; 2,923</span>
+                </div>
+                <div class="post-row" onclick="toast('Post 13 → clipboard')">
+                  <span class="pn"><span class="post-lk">#</span>Post 13</span>
+                  <span class="likes">&#10084;&#xFE0E; 1,204</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Benchmark + Growth ── -->
+        <div class="grid g2">
+
+          <!-- Benchmark -->
+          <div class="card">
+            <div class="card-h">
+              <div class="t"><span class="ico">◎</span> How They Compare to Similar Accounts</div>
+              <span class="pill">Small creator</span>
+            </div>
+
+            <div class="bench-verdict">
+              <div class="bench-verdict-row">
+                <span class="bench-label" style="color:var(--accent)">High</span>
+                <span class="bench-index">107.1% of the typical rate for their size</span>
+              </div>
+              <p class="bench-desc">This account's posts get more engagement than most creators of a similar size.</p>
+            </div>
+
+            <div class="bands-wrap">
+              <div class="bands-track">
+                <div class="band-marker" style="left:71%">
+                  <span class="band-marker-tag">This account</span>
+                  <span class="band-marker-stem"></span>
+                  <span class="band-marker-dot"></span>
+                </div>
+                <div class="bands-bar">
+                  <div class="band-seg" style="background:var(--neg)"></div>
+                  <div class="band-seg" style="background:var(--warn)"></div>
+                  <div class="band-seg" style="background:var(--accent)"></div>
+                  <div class="band-seg"></div>
+                </div>
+              </div>
+              <div class="bands-labels">
+                <span class="band-lbl">Low</span>
+                <span class="band-lbl">Average</span>
+                <span class="band-lbl active">High</span>
+                <span class="band-lbl">Exceptional</span>
+              </div>
+            </div>
+
+            <div class="bench-compare">
+              <div class="bc-cell">
+                <div class="bc-k">This account</div>
+                <div class="bc-v" style="color:var(--accent)">3.75%</div>
+              </div>
+              <div class="bc-sep">vs</div>
+              <div class="bc-cell">
+                <div class="bc-k">Typical for their size</div>
+                <div class="bc-v">3.50%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Growth chart -->
+          <div class="card">
+            <div class="card-h">
+              <div class="t"><span class="ico">📈</span> Followers Over Time</div>
+              <span class="pill" style="font-size:9px">TREND</span>
+            </div>
+            <div class="chart">
+              <div id="chart-growth"></div>
+              <div class="axis-x">
+                <span>May 1</span><span></span><span></span><span></span>
+                <span>May 20</span><span></span><span></span><span>Jun 1</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Reels Views + Posts Reach ── -->
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-h">
+              <div class="t"><span class="ico">📈</span> How Many People Watched the Videos</div>
+              <span class="pill" style="font-size:9px">VIEWS</span>
+            </div>
+            <div class="chart">
+              <div id="chart-reels"></div>
+              <div class="axis-x">
+                <span>Feb 17</span><span>May 10</span><span>May 26</span><span>Jun 1</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h">
+              <div class="t"><span class="ico">📈</span> How Many People Saw the Posts</div>
+              <span class="pill" style="font-size:9px">REACHED</span>
+            </div>
+            <div class="chart">
+              <div id="chart-reach"></div>
+              <div class="axis-x">
+                <span>Feb 17</span><span>May 10</span><span>May 26</span><span>Jun 1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Stats row ── -->
+        <div class="grid g4">
+          <div class="card statline">
+            <div class="v"><span class="cu" data-val="161">161</span></div>
+            <div class="k">Typical Likes per Post</div>
+            <div class="d">A normal post lands around here.</div>
+          </div>
+          <div class="card statline">
+            <div class="v"><span class="cu" data-val="2">2</span></div>
+            <div class="k">Typical Comments per Post</div>
+            <div class="d">How many people usually comment.</div>
+          </div>
+          <div class="card statline">
+            <div class="v"><span class="cu" data-val="1338.7">1,338.7</span></div>
+            <div class="k">Average Likes per Post</div>
+            <div class="d">A few big posts pull this number up.</div>
+          </div>
+          <div class="card statline day-card">
+            <div class="k">Busiest Posting Day</div>
+            <div class="v">Mon</div>
+            <div class="d">The day of the week they post most often.</div>
+          </div>
+        </div>
+
+        <!-- ── Peak / low ── -->
+        <div class="grid g2">
+          <div class="linkrow peak" onclick="clip('https://instagram.com/p/D2CrvFAgey2', 'Best post link')">
+            <div class="lr-lab">
+              <div class="t">Their Best Post</div>
+              <div class="u">instagram.com/p/D2CrvFAgey2</div>
+            </div>
+            <div class="lr-stat">5,726 likes · 9 comments</div>
+          </div>
+          <div class="linkrow low" onclick="clip('https://instagram.com/p/DZFi_Eh3bw', 'Weakest post link')">
+            <div class="lr-lab">
+              <div class="t">Their Weakest Post</div>
+              <div class="u">instagram.com/p/DZFi_Eh3bw</div>
+            </div>
+            <div class="lr-stat">20 likes · 0 comments</div>
+          </div>
+        </div>
+
+        <!-- ── Section: posts ── -->
+        <div class="sec-head">
+          <span class="n"><span class="ic">◳</span> A Closer Look at Their Posts</span>
+          <span class="line"></span>
+          <p>Which posts did well, and why</p>
+        </div>
+
+        <!-- Feed + Diagnostic -->
+        <div class="grid g2">
+
+          <!-- Feed list -->
+          <div class="card">
+            <div class="card-h">
+              <div class="t"><span class="ico">▤</span> Their Posts, Best to Worst</div>
+              <span class="pill" style="font-size:9px">By Likes</span>
+            </div>
+            <div class="feed" id="feed">
+
+              <div class="feed-item active" onclick="pickFeed(this)">
+                <div class="feed-rank">1</div>
+                <div class="feed-thumb">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>
+                </div>
+                <div class="feed-body">
+                  <div class="ttl">Post 8 <span style="color:var(--faint);font-weight:500;font-size:11px">· Jun 1</span></div>
+                  <div class="cap">नारिश केला होगा अनार… astrology daily forecast</div>
+                </div>
+                <div class="feed-likes">❤ 5,728</div>
+              </div>
+
+              <div class="feed-item" onclick="pickFeed(this)">
+                <div class="feed-rank">2</div>
+                <div class="feed-thumb">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>
+                </div>
+                <div class="feed-body">
+                  <div class="ttl">Post 12 <span style="color:var(--faint);font-weight:500;font-size:11px">· May 9</span></div>
+                  <div class="cap">नारिश केला होगा अनार… moon sign prediction</div>
+                </div>
+                <div class="feed-likes">❤ 4,963</div>
+              </div>
+
+              <div class="feed-item" onclick="pickFeed(this)">
+                <div class="feed-rank">3</div>
+                <div class="feed-thumb">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>
+                </div>
+                <div class="feed-body">
+                  <div class="ttl">Post 1 <span style="color:var(--faint);font-weight:500;font-size:11px">· May 30</span></div>
+                  <div class="cap">Weekly Horoscope (May 26 – Jun 01)</div>
+                </div>
+                <div class="feed-likes">❤ 3,871</div>
+              </div>
+
+              <div class="feed-item" onclick="pickFeed(this)">
+                <div class="feed-rank">4</div>
+                <div class="feed-thumb">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>
+                </div>
+                <div class="feed-body">
+                  <div class="ttl">Post 15 <span style="color:var(--faint);font-weight:500;font-size:11px">· May 18</span></div>
+                  <div class="cap">Weekly Horoscope (May 12 – May 18)</div>
+                </div>
+                <div class="feed-likes">❤ 2,923</div>
+              </div>
+
+              <div class="feed-item" onclick="pickFeed(this)">
+                <div class="feed-rank">5</div>
+                <div class="feed-thumb">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>
+                </div>
+                <div class="feed-body">
+                  <div class="ttl">Post 9 <span style="color:var(--faint);font-weight:500;font-size:11px">· May 9</span></div>
+                  <div class="cap">Reels — daily remedy short</div>
+                </div>
+                <div class="feed-likes">❤ 713</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Diagnostic -->
+          <div class="card">
+            <div class="diag">
+              <div class="diag-head">
+                <div>
+                  <div class="diag-title">Best Post · Post 8</div>
+                  <div class="diag-meta">Posted Jun 1, 2026 · Photo album</div>
+                </div>
+                <span class="pill dot win" style="font-size:9px">Did Better Than Usual</span>
+              </div>
+              <div class="diag-actions">
+                <button class="btn btn-ghost" onclick="clip('https://instagram.com/p/D2CrvFAgey2', 'Post link')">↗ Open the Post</button>
+                <button class="btn btn-ghost" onclick="clip('Share this with friends and family…', 'Caption')">⧉ Copy Caption</button>
+              </div>
+              <div class="caption-box">
+                Share this with friends and family, add it to your story, and tag @astroarunpandit to spread the astrological insight. ✨ Daily Horoscope, Moon Sign Prediction, Today's Horoscope, Daily Horoscope By Astro Arun Pandit, Dainik Rashifal, Aaj Ka Rashifal, astrology, Daily Astro Remedies By Astro Arun Pandit, vedic astrology, best astrologer, kundali, famous astrologer, astrology remedies
+                <span class="htag"> #bestastrologer</span>
+                <span class="htag"> #astrology</span>
+                <span class="htag"> #dailyhoroscope</span>
+                <span class="htag"> #astroarunpandit</span>
+                <span class="htag"> #horoscope</span>
+              </div>
+              <div class="snapshot">
+                <span class="beam"></span>
+                <div>
+                  <div class="ai-badge">What our AI noticed</div>
+                  <div class="ai-result">This post did better than their usual posts</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Section: hashtags ── -->
+        <div class="sec-head">
+          <span class="n"><span class="ic">#</span> Hashtag Tips</span>
+          <span class="line"></span>
+          <p>What to keep, drop, and try</p>
+        </div>
+
+        <!-- Hashtag matrix -->
+        <div class="card">
+          <div class="card-h">
+            <div class="t"><span class="ico">#</span> Which Hashtags They Use Most</div>
+            <span class="pill dot win" style="font-size:9px">Live</span>
+          </div>
+          <div class="card-sub">How often each tag showed up across their last 15 posts.</div>
+          <div>
+            <div class="ht-row"><span class="ht-tag">#horoscope</span>       <span class="ht-bar"><i style="width:93.3%"></i></span><span class="ht-ratio">14/15</span></div>
+            <div class="ht-row"><span class="ht-tag">#astrology</span>       <span class="ht-bar"><i style="width:93.3%"></i></span><span class="ht-ratio">14/15</span></div>
+            <div class="ht-row"><span class="ht-tag">#weeklyhoroscope</span> <span class="ht-bar"><i style="width:13.3%"></i></span><span class="ht-ratio">2/15</span></div>
+            <div class="ht-row"><span class="ht-tag">#vedicastrology</span>  <span class="ht-bar"><i style="width:13.3%"></i></span><span class="ht-ratio">2/15</span></div>
+            <div class="ht-row"><span class="ht-tag">#zodiacsigns</span>     <span class="ht-bar"><i style="width:6.7%"></i></span> <span class="ht-ratio">1/15</span></div>
+            <div class="ht-row"><span class="ht-tag">#dailyhoroscope</span>  <span class="ht-bar"><i style="width:6.7%"></i></span> <span class="ht-ratio">1/15</span></div>
+            <div class="ht-row"><span class="ht-tag">#relationship</span>    <span class="ht-bar"><i style="width:6.7%"></i></span> <span class="ht-ratio">1/15</span></div>
+            <div class="ht-row"><span class="ht-tag">#love</span>            <span class="ht-bar"><i style="width:6.7%"></i></span> <span class="ht-ratio">1/15</span></div>
+          </div>
+        </div>
+
+        <!-- Quartiles -->
+        <div class="card">
+          <div class="card-h">
+            <div class="t"><span class="ico">▦</span> Hashtags That Help vs. Hashtags That Don't</div>
+          </div>
+          <div class="card-sub">Tags grouped by how well the posts using them did.</div>
+          <div class="grid g2">
+            <div class="quart top">
+              <div class="quart-head">
+                <span class="lab">Best performers · avg 1,839 likes</span>
+                <span class="cnt">9 tags</span>
+              </div>
+              <div class="chips">
+                <span class="chip">#dailyhoroscope  <span class="c pos">good</span></span>
+                <span class="chip">#bestastrologer  <span class="c pos">good</span></span>
+                <span class="chip">#astroarunpandit <span class="c pos">good</span></span>
+                <span class="chip">#weeklyhoroscope <span class="c pos">good</span></span>
+                <span class="chip">#vedicastrology  <span class="c pos">good</span></span>
+              </div>
+            </div>
+            <div class="quart bot">
+              <div class="quart-head">
+                <span class="lab">Weakest performers · avg 146 likes</span>
+                <span class="cnt">4 tags</span>
+              </div>
+              <div class="chips">
+                <span class="chip">#astrologer  <span class="c neg">used once</span></span>
+                <span class="chip">#affirmation <span class="c neg">used once</span></span>
+                <span class="chip">#stories     <span class="c neg">used once</span></span>
+                <span class="chip">#series      <span class="c neg">used once</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="foot">"Best performers" are the tags that showed up on their most-liked posts.</div>
+        </div>
+
+        <!-- Strategy -->
+        <div class="card">
+          <div class="card-h">
+            <div class="t"><span class="ico">✦</span> What We'd Suggest for Hashtags</div>
+            <button class="btn btn-ghost" onclick="clip('Keep the astrology tags · max 5 per post · try more specific tags', 'Suggestions')">⧉ Copy Tips</button>
+          </div>
+          <div class="card-sub">A quick read on what's working and what to change.</div>
+          <div class="grid g2">
+            <div>
+              <div class="eyebrow" style="margin-bottom:11px">What We See</div>
+              <div class="strat-list">
+                <div class="strat-item">
+                  <span class="strat-dot"></span>
+                  <span class="txt"><b>Best tag:</b> <b style="color:var(--accent)">#astrology</b> brought in 1,432 likes — their strongest one by far.</span>
+                </div>
+                <div class="strat-item warn">
+                  <span class="strat-dot"></span>
+                  <span class="txt"><b>Watch out:</b> <b>Very general tags</b> get lost in the crowd. Try more specific ones.</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="eyebrow" style="margin-bottom:11px">What To Try</div>
+              <div class="strat-list">
+                <div class="strat-item">
+                  <span class="strat-dot"></span>
+                  <span class="txt"><b>Keep using</b> the main astrology tags that already work.</span>
+                </div>
+                <div class="strat-item">
+                  <span class="strat-dot"></span>
+                  <span class="txt"><b>Don't overdo it —</b> stick to fewer than 5 tags per post.</span>
+                </div>
+                <div class="strat-item">
+                  <span class="strat-dot"></span>
+                  <span class="txt"><b>Get specific:</b> pick niche tags with less competition.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kill list + Targets -->
+        <div class="grid g2">
+
+          <div class="card">
+            <div class="card-h">
+              <div class="t"><span class="ico" style="color:var(--neg)">⚠</span> Hashtags To Drop</div>
+              <span class="pill" style="color:var(--neg);border-color:color-mix(in oklab,var(--neg) 35%,transparent)">Stop Using</span>
+            </div>
+            <div class="card-sub">These tags aren't helping posts get seen. Better to skip them.</div>
+            <div class="kill-list">
+              <div class="kill-item">
+                <div class="kill-top"><span class="tag">#astrologer</span><span class="kill-badge">Drop It</span></div>
+                <div class="kill-desc">None of the posts using this tag did well. It isn't helping.</div>
+                <div class="kill-stats"><span>Avg likes <b>149</b></span><span>Used on <b>4 posts</b></span></div>
+              </div>
+              <div class="kill-item">
+                <div class="kill-top"><span class="tag">#affirmation</span><span class="kill-badge">Drop It</span></div>
+                <div class="kill-desc">None of the posts using this tag did well. It isn't helping.</div>
+                <div class="kill-stats"><span>Avg likes <b>149</b></span><span>Used on <b>4 posts</b></span></div>
+              </div>
+              <div class="kill-item">
+                <div class="kill-top"><span class="tag">#stories</span><span class="kill-badge">Drop It</span></div>
+                <div class="kill-desc">Posts with this tag got some of the fewest likes overall.</div>
+                <div class="kill-stats"><span>Avg likes <b>77</b></span><span>Used on <b>3 posts</b></span></div>
+              </div>
+            </div>
+            <div class="foot">Cutting these can help future posts reach more people.</div>
+          </div>
+
+          <div class="card">
+            <div class="card-h">
+              <div class="t"><span class="ico">▷</span> New Hashtags To Try</div>
+              <span class="pill win" style="font-size:9px">Worth a Shot</span>
+            </div>
+            <div class="card-sub">Popular tags they're not using yet. Tap one to copy it.</div>
+            <div class="kill-list">
+              <div class="target" onclick="clip('#mulank', '#mulank')">
+                <div class="target-l">
+                  <span class="target-ico">#</span>
+                  <div>
+                    <div class="target-tag">#mulank</div>
+                    <div class="target-vol">Very popular</div>
+                  </div>
+                </div>
+                <span class="target-up">+28.4%</span>
+              </div>
+              <div class="target" onclick="clip('#daily', '#daily')">
+                <div class="target-l">
+                  <span class="target-ico">#</span>
+                  <div>
+                    <div class="target-tag">#daily</div>
+                    <div class="target-vol">Fairly popular</div>
+                  </div>
+                </div>
+                <span class="target-up">+24.3%</span>
+              </div>
+              <div class="target" onclick="clip('#sign', '#sign')">
+                <div class="target-l">
+                  <span class="target-ico">#</span>
+                  <div>
+                    <div class="target-tag">#sign</div>
+                    <div class="target-vol">Fairly popular</div>
+                  </div>
+                </div>
+                <span class="target-up">+23.4%</span>
+              </div>
+              <div class="target" onclick="clip('#astro', '#astro')">
+                <div class="target-l">
+                  <span class="target-ico">#</span>
+                  <div>
+                    <div class="target-tag">#astro</div>
+                    <div class="target-vol">Very popular</div>
+                  </div>
+                </div>
+                <span class="target-up">+27.9%</span>
+              </div>
+            </div>
+            <div class="foot">The percentage is a rough estimate of the extra reach these could bring.</div>
+          </div>
+
+        </div>
+
+        <!-- ── Section: competitors ── -->
+        <div class="sec-head">
+          <span class="n"><span class="ic">🏆</span> How Big Accounts Compare</span>
+          <span class="line"></span>
+          <p>A look at five well-known profiles</p>
+        </div>
+
+        <!-- Competitor cards -->
+        <div class="grid g2">
+
+          <div class="card">
+            <div class="comp-head">
+              <div class="comp-rank">#1</div>
+              <div class="comp-handle">@mrbeast</div>
+              <div class="comp-er"><div class="v">3.4%</div><div class="k">Interaction Rate</div></div>
+            </div>
+            <div class="comp-grid">
+              <div class="comp-cell"><div class="ck">👥 Followers</div><div class="cv">86,823,815</div></div>
+              <div class="comp-cell"><div class="ck">⚡ Posts/Week</div><div class="cv">0.2 /wk</div></div>
+              <div class="comp-cell"><div class="ck">👻 Likely Fake</div><div class="cv bad">8.2%</div></div>
+              <div class="comp-cell"><div class="ck">✓ Likely Real</div><div class="cv">91.8%</div></div>
+            </div>
+            <div class="comp-foot">
+              <div class="bp best"><div class="bk">Best Post</div><div class="bv">20,015,920</div></div>
+              <div class="bp worst"><div class="bk">Worst Post</div><div class="bv">457,498</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="comp-head">
+              <div class="comp-rank">#2</div>
+              <div class="comp-handle">@khaby00</div>
+              <div class="comp-er"><div class="v">1.93%</div><div class="k">Interaction Rate</div></div>
+            </div>
+            <div class="comp-grid">
+              <div class="comp-cell"><div class="ck">👥 Followers</div><div class="cv">77,700,895</div></div>
+              <div class="comp-cell"><div class="ck">⚡ Posts/Week</div><div class="cv">1.9 /wk</div></div>
+              <div class="comp-cell"><div class="ck">👻 Likely Fake</div><div class="cv bad">9.1%</div></div>
+              <div class="comp-cell"><div class="ck">✓ Likely Real</div><div class="cv">90.9%</div></div>
+            </div>
+            <div class="comp-foot">
+              <div class="bp best"><div class="bk">Best Post</div><div class="bv">4,296,178</div></div>
+              <div class="bp worst"><div class="bk">Worst Post</div><div class="bv">90,055</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="comp-head">
+              <div class="comp-rank">#3</div>
+              <div class="comp-handle">@charlidamelio</div>
+              <div class="comp-er"><div class="v">0.73%</div><div class="k">Interaction Rate</div></div>
+            </div>
+            <div class="comp-grid">
+              <div class="comp-cell"><div class="ck">👥 Followers</div><div class="cv">1,607,138</div></div>
+              <div class="comp-cell"><div class="ck">⚡ Posts/Week</div><div class="cv">2.6 /wk</div></div>
+              <div class="comp-cell"><div class="ck">👻 Likely Fake</div><div class="cv bad">17.2%</div></div>
+              <div class="comp-cell"><div class="ck">✓ Likely Real</div><div class="cv">82.8%</div></div>
+            </div>
+            <div class="comp-foot">
+              <div class="bp best"><div class="bk">Best Post</div><div class="bv">10,999</div></div>
+              <div class="bp worst"><div class="bk">Worst Post</div><div class="bv">3,872</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="comp-head">
+              <div class="comp-rank">#4</div>
+              <div class="comp-handle">@addisonraee</div>
+              <div class="comp-er"><div class="v">1.34%</div><div class="k">Interaction Rate</div></div>
+            </div>
+            <div class="comp-grid">
+              <div class="comp-cell"><div class="ck">👥 Followers</div><div class="cv">33,512,469</div></div>
+              <div class="comp-cell"><div class="ck">⚡ Posts/Week</div><div class="cv">0.3 /wk</div></div>
+              <div class="comp-cell"><div class="ck">👻 Likely Fake</div><div class="cv bad">12.3%</div></div>
+              <div class="comp-cell"><div class="ck">✓ Likely Real</div><div class="cv">87.7%</div></div>
+            </div>
+            <div class="comp-foot">
+              <div class="bp best"><div class="bk">Best Post</div><div class="bv">766,073</div></div>
+              <div class="bp worst"><div class="bk">Worst Post</div><div class="bv">896,623</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="comp-head">
+              <div class="comp-rank">#5</div>
+              <div class="comp-handle">@zachking</div>
+              <div class="comp-er"><div class="v">0.91%</div><div class="k">Interaction Rate</div></div>
+            </div>
+            <div class="comp-grid">
+              <div class="comp-cell"><div class="ck">👥 Followers</div><div class="cv">29,269,905</div></div>
+              <div class="comp-cell"><div class="ck">⚡ Posts/Week</div><div class="cv">1.4 /wk</div></div>
+              <div class="comp-cell"><div class="ck">👻 Likely Fake</div><div class="cv bad">5.9%</div></div>
+              <div class="comp-cell"><div class="ck">✓ Likely Real</div><div class="cv">94.1%</div></div>
+            </div>
+            <div class="comp-foot">
+              <div class="bp best"><div class="bk">Best Post</div><div class="bv">1,068,668</div></div>
+              <div class="bp worst"><div class="bk">Worst Post</div><div class="bv">44,212</div></div>
+            </div>
+          </div>
+
+        </div><!-- /competitors grid -->
+
+      </div><!-- /wrap -->
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ──────────────────────────────────────────────
+   Helpers
+────────────────────────────────────────────── */
+var _toastT;
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(function () { el.classList.remove('show'); }, 1800);
+}
+function clip(text, label) {
+  try { navigator.clipboard.writeText(text); } catch (e) {}
+  toast((label || 'Copied') + ' → clipboard');
+}
+
+/* ──────────────────────────────────────────────
+   Audit button
+────────────────────────────────────────────── */
+function runAudit(btn) {
+  btn.textContent = 'Checking…';
+  btn.style.opacity = '.7';
+  btn.disabled = true;
+  setTimeout(function () {
+    btn.textContent = 'Check This Account';
+    btn.style.opacity = '';
+    btn.disabled = false;
+  }, 1400);
+}
+
+/* ──────────────────────────────────────────────
+   Palette switcher
+────────────────────────────────────────────── */
+function setPalette(btn) {
+  document.documentElement.setAttribute('data-palette', btn.dataset.p);
+  document.querySelectorAll('.pal-btn').forEach(function (b) {
+    b.classList.toggle('active', b === btn);
+  });
+  // Re-draw charts so stroke colours update
+  drawAllCharts();
+}
+
+/* ──────────────────────────────────────────────
+   Feed selector
+────────────────────────────────────────────── */
+function pickFeed(el) {
+  document.querySelectorAll('#feed .feed-item').forEach(function (item) {
+    item.classList.remove('active');
+  });
+  el.classList.add('active');
+}
+
+/* ──────────────────────────────────────────────
+   Count-up animation
+────────────────────────────────────────────── */
+function countUp(el) {
+  var raw = el.dataset.val;
+  var suffix = (raw.match(/[^\d.,]+$/) || [''])[0];
+  var numStr = raw.replace(/[^\d.]/g, '');
+  var target = parseFloat(numStr) || 0;
+  var decimals = (numStr.split('.')[1] || '').length;
+  var t0 = performance.now();
+  var dur = 950;
+  var raf;
+
+  function fmt(n) {
+    return n.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    }) + suffix;
+  }
+  function tick(now) {
+    var k = Math.min(1, (now - t0) / dur);
+    var e = 1 - Math.pow(1 - k, 3);
+    el.textContent = fmt(target * e);
+    if (k < 1) raf = requestAnimationFrame(tick);
+    else el.textContent = raw;
+  }
+  raf = requestAnimationFrame(tick);
+  setTimeout(function () { cancelAnimationFrame(raf); el.textContent = raw; }, dur + 300);
+}
+
+/* ──────────────────────────────────────────────
+   SVG line chart
+────────────────────────────────────────────── */
+function drawChart(id, pts, stroke, h) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  stroke = stroke || 'var(--accent)';
+  h = h || 148;
+  var W = 480, H = h, pad = 14;
+  var max = Math.max.apply(null, pts);
+  var min = Math.min.apply(null, pts);
+  var span = (max - min) || 1;
+  var n = pts.length;
+  var xs = function (i) { return pad + (i * (W - pad * 2)) / (n - 1); };
+  var ys = function (v) { return H - pad - ((v - min) / span) * (H - pad * 2); };
+  var P = pts.map(function (v, i) { return [xs(i), ys(v)]; });
+
+  var d = '';
+  P.forEach(function (p, i) {
+    if (i === 0) { d = 'M' + p[0] + ' ' + p[1]; return; }
+    var p0 = P[i - 1], p1 = p;
+    var pr = P[i - 2] || p0, nx = P[i + 1] || p1;
+    var cx1 = p0[0] + (p1[0] - pr[0]) / 6;
+    var cy1 = p0[1] + (p1[1] - pr[1]) / 6;
+    var cx2 = p1[0] - (nx[0] - p0[0]) / 6;
+    var cy2 = p1[1] - (nx[1] - p0[1]) / 6;
+    d += ' C' + cx1 + ' ' + cy1 + ',' + cx2 + ' ' + cy2 + ',' + p1[0] + ' ' + p1[1];
+  });
+
+  var area = d + ' L' + xs(n - 1) + ' ' + H + ' L' + xs(0) + ' ' + H + 'Z';
+  var gid = 'g' + (Math.random() * 1e8 | 0).toString(36);
+
+  var circles = P.map(function (p, i) {
+    var last = i === P.length - 1;
+    return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (last ? 4.5 : 3) +
+      '" fill="' + (last ? stroke : 'var(--surf)') + '" stroke="' + stroke + '" stroke-width="2"/>';
+  }).join('');
+
+  var gridLines = [0.25, 0.5, 0.75].map(function (g) {
+    var y = H * g;
+    return '<line x1="0" x2="' + W + '" y1="' + y + '" y2="' + y + '" stroke="var(--grid)" stroke-width="1"/>';
+  }).join('');
+
+  el.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="width:100%;height:' + H + 'px;display:block">' +
+    '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="' + stroke + '" stop-opacity="0.26"/>' +
+    '<stop offset="100%" stop-color="' + stroke + '" stop-opacity="0"/>' +
+    '</linearGradient></defs>' +
+    gridLines +
+    '<path d="' + area + '" fill="url(#' + gid + ')"/>' +
+    '<path d="' + d + '" fill="none" stroke="' + stroke + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+    circles +
+    '</svg>';
+}
+
+function drawAllCharts() {
+  drawChart('chart-growth', [40,42,41,45,47,46,49,52,54,57,59,63], 'var(--accent)');
+  drawChart('chart-reels',  [5900,1200,900,5800], 'var(--acc2)');
+  drawChart('chart-reach',  [610,140,90,420],     'var(--acc2)');
+}
+
+/* ──────────────────────────────────────────────
+   Init
+────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.cu').forEach(countUp);
+  drawAllCharts();
+});
+</script>
 </body>
 </html>
