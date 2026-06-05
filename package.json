@@ -4,6 +4,6 @@
   "private": true,
   "scripts": {
     "api": "uvicorn main:app --reload --port 8000 --host 0.0.0.0 --app-dir backend",
-    "vanilla": "npx -y serve -l 5000 frontend-vanilla"
+    "frontend": "npx -y serve -l 5000 new-ui-ux-frontend"
   }
 }

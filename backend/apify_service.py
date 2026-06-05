@@ -43,6 +43,7 @@ def _load_csv_for_profile(username: str) -> list | None:
                 "caption":       str(row.get("caption", "")),
                 "url":           url,
                 "shortcode":     shortcode,
+                "displayUrl":    str(row.get("display_url", "")),
             })
         print(f"[Cache HIT] Loaded {len(posts)} posts for '{username}' from CSV.")
         return posts[:MAX_POSTS]
@@ -69,6 +70,7 @@ def _save_to_csv(profile_url: str, posts: list):
                 "caption":     p.get("caption", ""),
                 "url":         url,
                 "shortcode":   shortcode,
+                "display_url": p.get("displayUrl", ""),
             })
         df_new = pd.DataFrame(rows)
 
@@ -131,6 +133,7 @@ def _scrape_via_apify(profile_url: str) -> list:
             "caption":       str(item.get("caption") or ""),
             "url":           post_url,
             "shortcode":     shortcode,
+            "displayUrl":    item.get("displayUrl") or item.get("thumbnailUrl") or "",
             "videoPlayCount": int(item.get("videoPlayCount") or item.get("videoViewCount") or item.get("playCount") or item.get("viewCount") or item.get("playsCount") or item.get("viewsCount") or 0),
             "productType":   item.get("productType") or ""
         })
@@ -389,6 +392,7 @@ def _generate_highly_authentic_posts(profile_url: str) -> list:
             "caption": caption,
             "url": f"https://www.instagram.com/p/{shortcode}/",
             "shortcode": shortcode,
+            "displayUrl": f"https://picsum.photos/100/100?random={i}",
             "videoPlayCount": video_play_count,
             "productType": product_type,
             "is_mock": True
@@ -460,6 +464,7 @@ def _scrape_via_instagram_api(profile_url: str) -> list:
             "caption": caption,
             "url": f"https://www.instagram.com/p/{shortcode}/",
             "shortcode": shortcode,
+            "displayUrl": node.get("display_url") or node.get("thumbnail_src") or "",
             "videoPlayCount": int(node.get("video_view_count") or 0),
             "productType": node.get("product_type") or ""
         })

@@ -822,7 +822,7 @@ function renderCompetitors(competitors) {
           <!-- Ghost Followers -->
           <div class="comp-ghost-box">
             <span class="comp-ghost-title">
-              <i data-lucide="shield-alert"></i>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               Inactive Followers
             </span>
             <span class="comp-ghost-val">${ghostPct}%</span>
@@ -832,14 +832,16 @@ function renderCompetitors(competitors) {
           <div class="comp-highlights">
             <div>
               <span class="comp-highlight-title">Best Post</span>
-              <a href="${bestPostUrl}" target="_blank" class="comp-highlight-btn best">
+              <a href="${bestPostUrl}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${bestPostInteractions}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Interactions</div>
               </a>
             </div>
             <div>
               <span class="comp-highlight-title">Worst Post</span>
-              <a href="${worstPostUrl}" target="_blank" class="comp-highlight-btn worst">
+              <a href="${worstPostUrl}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${worstPostInteractions}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Interactions</div>
               </a>
@@ -863,6 +865,7 @@ function renderCompetitors(competitors) {
       ${cardsHtml}
     </div>
   `;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 // ─── HASHTAG INTEL SYNCHRONOUS COMPILER ───
@@ -1201,13 +1204,25 @@ function renderMedianMetricsAndBestWorst(data) {
   
   document.getElementById('best-post-stats').textContent = `${(bestPost.likes || 0).toLocaleString()} Likes · ${(bestPost.comments || 0).toLocaleString()} Comments`;
   const bestLink = document.getElementById('best-post-link');
-  bestLink.href = bestPost.post_url || '#';
-  bestLink.textContent = bestPost.post_url || 'No URL available';
+  if (bestLink) {
+    bestLink.href = bestPost.post_url || '#';
+    bestLink.textContent = bestPost.post_url || 'No URL available';
+  }
+  const bestThumb = document.getElementById('best-post-thumbnail');
+  if (bestThumb && bestPost.display_url) {
+    bestThumb.src = bestPost.display_url;
+  }
   
   document.getElementById('worst-post-stats').textContent = `${(worstPost.likes || 0).toLocaleString()} Likes · ${(worstPost.comments || 0).toLocaleString()} Comments`;
   const worstLink = document.getElementById('worst-post-link');
-  worstLink.href = worstPost.post_url || '#';
-  worstLink.textContent = worstPost.post_url || 'No URL available';
+  if (worstLink) {
+    worstLink.href = worstPost.post_url || '#';
+    worstLink.textContent = worstPost.post_url || 'No URL available';
+  }
+  const worstThumb = document.getElementById('worst-post-thumbnail');
+  if (worstThumb && worstPost.display_url) {
+    worstThumb.src = worstPost.display_url;
+  }
 }
 
 function renderPostsFeedAndDeepDive(data) {
@@ -1486,19 +1501,6 @@ function renderFormatPerformanceBattle(data) {
   }
   container.classList.remove('hidden');
 
-  const badgeContainer = document.getElementById('format-battle-badge-container');
-  if (badgeContainer) {
-    const reelsInteractions = (performanceSplit.reels?.total_interactions || 0);
-    const staticInteractions = (performanceSplit.static?.total_interactions || 0);
-    
-    if (reelsInteractions > staticInteractions) {
-      badgeContainer.innerHTML = `
-        <span class="format-battle-badge reels-won">
-          🔥 Reels Driving Reach
-        </span>
-      `;
-    } else {
-      badgeContainer.innerHTML = `
         <span class="format-battle-badge static-won">
           🖼️ Static Content Winning
         </span>

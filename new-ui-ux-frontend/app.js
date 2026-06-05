@@ -37,10 +37,10 @@ function init() {
   if (progressCircle) {
     progressCircle.style.strokeDashoffset = SVG_CIRCUMFERENCE;
   }
-  
+
   // Load audit history list
   loadHistory();
-  
+
   // Attach search form submit listener
   if (searchForm) {
     searchForm.addEventListener('submit', handleSearchSubmit);
@@ -53,17 +53,17 @@ async function loadHistory() {
     const res = await fetch(`${BACKEND_URL}/api/history-list`);
     if (!res.ok) throw new Error('Failed to fetch history list');
     const list = await res.json();
-    
+
     if (list && list.length > 0) {
       historyListContainer.innerHTML = '';
       list.forEach(item => {
         const initials = item.username.substring(0, 2).toUpperCase();
-        const followersFormatted = item.total_followers >= 1000000 
-          ? `${(item.total_followers / 1000000).toFixed(1)}M` 
-          : item.total_followers >= 1000 
-            ? `${(item.total_followers / 1000).toFixed(1)}k` 
+        const followersFormatted = item.total_followers >= 1000000
+          ? `${(item.total_followers / 1000000).toFixed(1)}M`
+          : item.total_followers >= 1000
+            ? `${(item.total_followers / 1000).toFixed(1)}k`
             : item.total_followers;
-            
+
         // Calculate status direction class
         const erVal = parseFloat(item.engagement_rate) || 0;
         let directionClass = 'mid';
@@ -109,15 +109,15 @@ async function handleHistoryClick(username) {
   setLoadingState(true);
   startProgress();
   hideError();
-  
+
   try {
     const res = await fetch(`${BACKEND_URL}/api/history-snapshot/${encodeURIComponent(username)}`);
     if (!res.ok) throw new Error(`Snapshot fetch failed with code ${res.status}`);
     const data = await res.json();
-    
+
     await finishProgress();
     await new Promise(resolve => setTimeout(resolve, 600));
-    
+
     displayDashboard(data);
   } catch (err) {
     console.error(err);
@@ -132,28 +132,28 @@ async function handleSearchSubmit(e) {
   e.preventDefault();
   const profileUrl = profileUrlInput.value.trim();
   if (!profileUrl || state.loading) return;
-  
+
   setLoadingState(true);
   startProgress();
   hideError();
-  
+
   try {
     const encodedUrl = encodeURIComponent(profileUrl);
     const response = await fetch(`${BACKEND_URL}/api/dashboard-audit?profile_url=${encodedUrl}`);
     if (!response.ok) {
       throw new Error(`Server error: code ${response.status}`);
     }
-    
+
     const initData = await response.json();
     const jobId = initData.job_id;
-    
+
     let resData = null;
     while (true) {
       await new Promise(resolve => setTimeout(resolve, 3000));
       const statusRes = await fetch(`${BACKEND_URL}/api/audit-status/${jobId}`);
       if (!statusRes.ok) throw new Error("Failed to check status");
       const statusData = await statusRes.json();
-      
+
       if (statusData.status === "completed") {
         await finishProgress();
         await new Promise(resolve => setTimeout(resolve, 600));
@@ -163,7 +163,7 @@ async function handleSearchSubmit(e) {
         throw new Error(statusData.error || "Background audit process failed");
       }
     }
-    
+
     displayDashboard(resData);
     loadHistory(); // Refresh history list
   } catch (err) {
@@ -183,7 +183,7 @@ function setLoadingState(isLoading) {
     submitBtn.textContent = isLoading ? 'Checking…' : 'Check This Account';
   }
   if (profileUrlInput) profileUrlInput.disabled = isLoading;
-  
+
   if (isLoading) {
     if (emptyState) emptyState.classList.add('hidden');
     if (dashboardState) dashboardState.classList.add('hidden');
@@ -197,11 +197,11 @@ function setLoadingState(isLoading) {
 function startProgress() {
   state.progress = 0;
   updateProgressCircle(0);
-  
+
   if (state.progressInterval) {
     clearInterval(state.progressInterval);
   }
-  
+
   state.progressInterval = setInterval(() => {
     state.progress += Math.max(1, Math.floor(Math.random() * 3));
     if (state.progress >= 98) {
@@ -217,7 +217,7 @@ function finishProgress() {
     if (state.progressInterval) {
       clearInterval(state.progressInterval);
     }
-    
+
     const finishInterval = setInterval(() => {
       state.progress += Math.floor(Math.random() * 3) + 2;
       if (state.progress >= 100) {
@@ -236,12 +236,12 @@ function updateProgressCircle(val) {
   if (progressCircle) {
     progressCircle.style.strokeDashoffset = offset;
   }
-  
+
   // Update percentage text
   if (loaderPct) {
     loaderPct.textContent = `${val}%`;
   }
-  
+
   // Update loader stage status messages
   if (loaderStatus) {
     if (val < 25) {
@@ -267,7 +267,7 @@ function showError(msg) {
 }
 
 // Global dismiss/hide error
-window.hideError = function() {
+window.hideError = function () {
   if (errorPanel) {
     errorPanel.classList.add('hidden');
   }
@@ -284,42 +284,42 @@ function displayDashboard(rawData) {
   const data = rawData.client_metrics ? rawData.client_metrics : rawData;
   const competitorData = rawData.competitor_metrics || [];
   const clientStats = data.calculated_metrics || {};
-  
+
   state.activeProfile = data.profile_url || profileUrlInput.value.trim();
   state.selectedPost = null; // Reset selection on new load
-  
+
   // Hide placeholder/loader and show dashboard wrapper
   if (emptyState) emptyState.classList.add('hidden');
   if (loaderState) loaderState.classList.add('hidden');
   if (dashboardState) dashboardState.classList.remove('hidden');
-  
+
   // 1. Ingest Hero Meta Panel
   const handle = getProfileHandle(state.activeProfile);
-  
+
   // Update browser document title
   document.title = `AURA Audit — BloomX · ${handle}`;
-  
+
   const handleElements = document.querySelectorAll('#profile-handle');
   handleElements.forEach(el => {
     el.textContent = handle;
   });
-  
+
   const initialsElement = document.getElementById('profile-initials');
   if (initialsElement) {
     initialsElement.textContent = handle.substring(1, 3).toUpperCase();
   }
-  
+
   const linkElement = document.getElementById('profile-link');
   if (linkElement) {
     linkElement.href = state.activeProfile;
   }
-  
+
   const postsCount = data.posts?.length || 0;
   const statPostsCountEl = document.getElementById('stat-posts-count');
   if (statPostsCountEl) {
     statPostsCountEl.textContent = postsCount;
   }
-  
+
   const totalLikes = postsCount > 0 ? data.posts.reduce((sum, p) => sum + (p.likes || 0), 0) : 0;
   const statTotalLikesEl = document.getElementById('stat-total-likes');
   if (statTotalLikesEl) {
@@ -340,14 +340,14 @@ function displayDashboard(rawData) {
     statTotalFollowersEl.dataset.val = followersVal;
     statTotalFollowersEl.textContent = followersVal.toLocaleString();
   }
-  
+
   // 2. Ingest KPI Cards
   const erVal = clientStats.engagement_rate || 0;
   const erEl = document.getElementById('kpi-er');
   if (erEl) {
     erEl.dataset.val = erVal;
     erEl.textContent = erVal;
-    
+
     // Dynamically adjust first KPI card colors (good/warn/neg)
     const erCard = document.getElementById('kpi-er-card');
     if (erCard) {
@@ -360,7 +360,7 @@ function displayDashboard(rawData) {
   if (inactiveEl) {
     inactiveEl.dataset.val = inactiveVal;
     inactiveEl.textContent = inactiveVal;
-    
+
     const inactiveCard = document.getElementById('kpi-inactive-card');
     if (inactiveCard) {
       inactiveCard.className = 'card metric ' + (inactiveVal <= 10 ? 'pos' : inactiveVal <= 25 ? 'warnv' : 'good');
@@ -373,7 +373,7 @@ function displayDashboard(rawData) {
   if (authEl) {
     authEl.dataset.val = authenticityScoreRounded;
     authEl.textContent = authenticityScoreRounded;
-    
+
     const authCard = document.getElementById('kpi-authenticity-card');
     if (authCard) {
       authCard.className = 'card metric ' + (authenticityScoreRounded >= 80 ? 'pos' : authenticityScoreRounded >= 60 ? 'warnv' : 'good');
@@ -389,22 +389,22 @@ function displayDashboard(rawData) {
 
   // 3. Render SVG Charts
   renderAllDynamicCharts(rawData);
-  
+
   // 4. Render Format Performance Battle
   renderFormatPerformanceBattle(data);
-  
+
   // 5. Render Niche Benchmark
   renderNicheBenchmark(data);
-  
+
   // 6. Render Median Metrics and Best/Worst posts
   renderMedianMetricsAndBestWorst(data);
-  
+
   // 7. Render Two-Column Post Feed and Diagnostic Viewer
   renderPostsFeedAndDeepDive(data);
-  
+
   // 8. Ingest Hashtag Strategy
   const hashtagIntelligence = processHashtagIntelligence(data);
-  
+
   // Render AI suggestions
   const aiMarkdownEl = document.getElementById('hashtag-ai-markdown');
   if (aiMarkdownEl) {
@@ -421,7 +421,7 @@ function displayDashboard(rawData) {
       clip(aiStrategyText, 'AI Strategy');
     };
   }
-  
+
   // Populate Matrix Table List
   const matrixContainer = document.getElementById('hashtag-matrix-container');
   if (matrixContainer) {
@@ -443,7 +443,7 @@ function displayDashboard(rawData) {
   const q75Count = document.getElementById('q75-count');
   const q25Label = document.getElementById('q25-label');
   const q25Count = document.getElementById('q25-count');
-  
+
   if (q75Label) q75Label.textContent = `Best performers · avg ${Math.round(hashtagIntelligence.analyticsData.q75_threshold || 0).toLocaleString()} likes`;
   if (q75Count) q75Count.textContent = `${hashtagIntelligence.analyticsData.high_engagement_tags.length} tags`;
   if (q25Label) q25Label.textContent = `Weakest performers · avg ${Math.round(hashtagIntelligence.analyticsData.q25_threshold || 0).toLocaleString()} likes`;
@@ -510,10 +510,10 @@ function displayDashboard(rawData) {
       `).join('');
     }
   }
-  
+
   // 9. Ingest Competitor cards
   renderCompetitors(competitorData);
-  
+
   // Highlight active sidebar item
   document.querySelectorAll('#history-list .acct').forEach(el => {
     const hText = el.querySelector('.h')?.textContent || '';
@@ -536,10 +536,10 @@ function renderAllDynamicCharts(rawData) {
   const reachDistribution = rawData.reach_distribution_data || data.reach_distribution_data || [];
 
   // --- Chart 1: Audience Growth Timeline ---
-  const trendPts = trendHistory.length >= 2 ? trendHistory.map(item => item.follower_count) : [40,42,41,45,47,46,49,52,54,57,59,63];
-  const trendLabels = trendHistory.length >= 2 ? trendHistory.map(item => item.date) : ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const trendPts = trendHistory.length >= 2 ? trendHistory.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
+  const trendLabels = trendHistory.length >= 2 ? trendHistory.map(item => item.date) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   drawChart('chart-growth', trendPts, 'var(--accent)', 148, trendLabels);
-  
+
   // Update growth dates axis-x
   const growthAxis = document.getElementById('growth-axis-x');
   if (growthAxis && trendHistory.length >= 2) {
@@ -556,30 +556,32 @@ function renderAllDynamicCharts(rawData) {
   const reelsPts = reelsViews.length > 0 ? reelsViews.map(item => item.views) : [0, 0, 0, 0];
   const reelsLabels = reelsViews.length > 0 ? reelsViews.map(item => item.date) : ["Wk 1", "Wk 2", "Wk 3", "Wk 4"];
   drawChart('chart-reels', reelsPts, 'var(--acc2)', 148, reelsLabels);
-  
+
   const reelsAxis = document.getElementById('reels-axis-x');
   if (reelsAxis && reelsViews.length > 0) {
     reelsAxis.innerHTML = '';
-    reelsViews.forEach(item => {
+    const step = Math.max(1, Math.floor(reelsViews.length / 5));
+    for (let i = 0; i < reelsViews.length; i += step) {
       const span = document.createElement('span');
-      span.textContent = item.date;
+      span.textContent = reelsViews[i].date;
       reelsAxis.appendChild(span);
-    });
+    }
   }
 
   // --- Chart 3: Reach Performance Distribution ---
   const reachPts = reachDistribution.length > 0 ? reachDistribution.map(item => item.views) : [0, 0, 0, 0];
   const reachLabels = reachDistribution.length > 0 ? reachDistribution.map(item => item.date) : ["Wk 1", "Wk 2", "Wk 3", "Wk 4"];
   drawChart('chart-reach', reachPts, 'var(--acc2)', 148, reachLabels);
-  
+
   const reachAxis = document.getElementById('reach-axis-x');
   if (reachAxis && reachDistribution.length > 0) {
     reachAxis.innerHTML = '';
-    reachDistribution.forEach(item => {
+    const step = Math.max(1, Math.floor(reachDistribution.length / 5));
+    for (let i = 0; i < reachDistribution.length; i += step) {
       const span = document.createElement('span');
-      span.textContent = item.date;
+      span.textContent = reachDistribution[i].date;
       reachAxis.appendChild(span);
-    });
+    }
   }
 }
 
@@ -588,32 +590,23 @@ function renderFormatPerformanceBattle(data) {
   const performanceSplit = data.performance_split;
   if (!performanceSplit) return;
 
-  const badgeContainer = document.getElementById('format-battle-badge-container');
-  if (badgeContainer) {
-    const reelsInteractions = (performanceSplit.reels?.total_interactions || 0);
-    const staticInteractions = (performanceSplit.static?.total_interactions || 0);
-    
-    if (reelsInteractions > staticInteractions) {
-      badgeContainer.innerHTML = `<span class="pill win">Reels Are Winning</span>`;
-    } else {
-      badgeContainer.innerHTML = `<span class="pill win">Photos Are Winning</span>`;
-    }
-  }
+  const reelsInteractions = (performanceSplit.reels?.total_interactions || 0);
+  const staticInteractions = (performanceSplit.static?.total_interactions || 0);
 
   // Reels stats
   const reelsCount = performanceSplit.reels?.count || 0;
   const reelsLikes = performanceSplit.reels?.average_likes || 0;
   const reelsComments = performanceSplit.reels?.average_comments || 0;
-  
+
   const reelsHeader = document.getElementById('reels-header-label');
   if (reelsHeader) reelsHeader.textContent = `Reels (Videos) · ${reelsCount} posts`;
-  
+
   const reelsAvgLikes = document.getElementById('reels-avg-likes');
   if (reelsAvgLikes) {
     reelsAvgLikes.dataset.val = reelsLikes;
     reelsAvgLikes.textContent = Math.round(reelsLikes).toLocaleString();
   }
-  
+
   const reelsAvgComments = document.getElementById('reels-avg-comments');
   if (reelsAvgComments) reelsAvgComments.textContent = `${Math.round(reelsComments)} comments each, on average`;
 
@@ -621,18 +614,28 @@ function renderFormatPerformanceBattle(data) {
   const staticCount = performanceSplit.static?.count || 0;
   const staticLikes = performanceSplit.static?.average_likes || 0;
   const staticComments = performanceSplit.static?.average_comments || 0;
-  
+
   const staticHeader = document.getElementById('static-header-label');
   if (staticHeader) staticHeader.textContent = `Photos · ${staticCount} posts`;
-  
+
   const staticAvgLikes = document.getElementById('static-avg-likes');
   if (staticAvgLikes) {
     staticAvgLikes.dataset.val = staticLikes;
     staticAvgLikes.textContent = Math.round(staticLikes).toLocaleString();
   }
-  
+
   const staticAvgComments = document.getElementById('static-avg-comments');
   if (staticAvgComments) staticAvgComments.textContent = `${Math.round(staticComments)} comments each, on average`;
+
+  const battleContainer = document.querySelector('#format-battle-container .battle');
+  if (battleContainer) {
+    battleContainer.classList.remove('winL', 'winR');
+    if (reelsLikes > staticLikes) {
+      battleContainer.classList.add('winL');
+    } else if (staticLikes > reelsLikes) {
+      battleContainer.classList.add('winR');
+    }
+  }
 
   // Reels top posts list
   const reelsTopContainer = document.getElementById('reels-top-posts');
@@ -653,7 +656,7 @@ function renderFormatPerformanceBattle(data) {
               </svg>
             </span>
           </span>
-          <span class="likes">❤ ${post.likes.toLocaleString()} · 💬 ${(post.comments || 0).toLocaleString()}</span>
+          <span class="likes"><span style="color: var(--neg);">❤</span> ${post.likes.toLocaleString()} &nbsp;💬 ${(post.comments || 0).toLocaleString()}</span>
         </a>
       `).join('');
     }
@@ -678,7 +681,7 @@ function renderFormatPerformanceBattle(data) {
               </svg>
             </span>
           </span>
-          <span class="likes">❤ ${post.likes.toLocaleString()} · 💬 ${(post.comments || 0).toLocaleString()}</span>
+          <span class="likes"><span style="color: var(--neg);">❤</span> ${post.likes.toLocaleString()} &nbsp;💬 ${(post.comments || 0).toLocaleString()}</span>
         </a>
       `).join('');
     }
@@ -692,7 +695,7 @@ function renderNicheBenchmark(data) {
 
   const tierLabel = document.getElementById('benchmark-tier-label');
   if (tierLabel) tierLabel.textContent = benchmark.tier_label || 'N/A';
-  
+
   const statusBadge = document.getElementById('benchmark-status-badge');
   if (statusBadge) {
     statusBadge.textContent = (benchmark.index_score || 0) >= 100 ? 'High' : 'Low';
@@ -703,7 +706,7 @@ function renderNicheBenchmark(data) {
   if (performanceIndex) {
     performanceIndex.textContent = `${benchmark.index_score.toFixed(1)}% of the typical rate for their size`;
   }
-  
+
   const benchmarkDesc = document.getElementById('benchmark-desc');
   if (benchmarkDesc) {
     benchmarkDesc.textContent = (benchmark.index_score || 0) >= 100
@@ -732,10 +735,10 @@ function renderNicheBenchmark(data) {
 function renderMedianMetricsAndBestWorst(data) {
   const posts = data.posts || [];
   if (posts.length === 0) return;
-  
+
   const likes = posts.map(p => p.likes || 0);
   const comments = posts.map(p => p.comments || 0);
-  
+
   const calculateMedian = (arr) => {
     if (!arr || arr.length === 0) return 0;
     const sorted = [...arr].sort((a, b) => a - b);
@@ -746,11 +749,11 @@ function renderMedianMetricsAndBestWorst(data) {
     if (!arr || arr.length === 0) return 0;
     return Math.round(arr.reduce((sum, val) => sum + val, 0) / arr.length);
   };
-  
+
   const medianLikes = Number((data.median_likes ?? calculateMedian(likes)).toFixed(2));
   const medianComments = Number((data.median_comments ?? calculateMedian(comments)).toFixed(2));
   const averageLikes = Number((data.average_likes ?? calculateAverage(likes)).toFixed(2));
-  
+
   const getDayWithMostPosts = (postsList) => {
     if (!postsList || postsList.length === 0) return 'N/A';
     const dayCounts = {};
@@ -774,13 +777,13 @@ function renderMedianMetricsAndBestWorst(data) {
     });
     return maxDay;
   };
-  
+
   const dayWithMostPosts = data.calculated_metrics?.day_with_most_posts ?? getDayWithMostPosts(posts);
-  
+
   const sortedPosts = [...posts].sort((a, b) => b.likes - a.likes);
   const bestPost = sortedPosts[0] || { likes: 0, comments: 0, post_url: '#' };
   const worstPost = sortedPosts[sortedPosts.length - 1] || { likes: 0, comments: 0, post_url: '#' };
-  
+
   const medianLikesEl = document.getElementById('median-likes-value');
   if (medianLikesEl) {
     medianLikesEl.dataset.val = medianLikes;
@@ -798,10 +801,9 @@ function renderMedianMetricsAndBestWorst(data) {
   }
   const activeDayEl = document.getElementById('most-active-day-value');
   if (activeDayEl) activeDayEl.textContent = dayWithMostPosts;
-  
-  const bestStatsEl = document.getElementById('best-post-stats');
-  if (bestStatsEl) bestStatsEl.textContent = `${(bestPost.likes || 0).toLocaleString()} likes · ${(bestPost.comments || 0).toLocaleString()} comments`;
-  
+
+  document.getElementById('best-post-stats').textContent = `${(bestPost.likes || 0).toLocaleString()} likes · ${(bestPost.comments || 0).toLocaleString()} comments`;
+
   const bestLinkEl = document.getElementById('best-post-link');
   if (bestLinkEl) {
     bestLinkEl.innerHTML = `<a href="${bestPost.post_url}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
@@ -816,10 +818,15 @@ function renderMedianMetricsAndBestWorst(data) {
     </a>`;
     bestLinkEl.onclick = null;
   }
-  
+
+  const bestThumb = document.getElementById('best-post-thumbnail');
+  if (bestThumb && bestPost.display_url) {
+    bestThumb.src = bestPost.display_url;
+  }
+
   const worstStatsEl = document.getElementById('worst-post-stats');
   if (worstStatsEl) worstStatsEl.textContent = `${(worstPost.likes || 0).toLocaleString()} likes · ${(worstPost.comments || 0).toLocaleString()} comments`;
-  
+
   const worstLinkEl = document.getElementById('worst-post-link');
   if (worstLinkEl) {
     worstLinkEl.innerHTML = `<a href="${worstPost.post_url}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
@@ -834,13 +841,18 @@ function renderMedianMetricsAndBestWorst(data) {
     </a>`;
     worstLinkEl.onclick = null;
   }
+
+  const worstThumb = document.getElementById('worst-post-thumbnail');
+  if (worstThumb && worstPost.display_url) {
+    worstThumb.src = worstPost.display_url;
+  }
 }
 
 // ─── RENDERING FOR TWO-COLUMN FEED & DIAGNOSTICS ───
 function renderPostsFeedAndDeepDive(data) {
   const feedContainer = document.getElementById('feed');
   if (!feedContainer) return;
-  
+
   const posts = data.posts || [];
   if (posts.length === 0) {
     feedContainer.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--faint); padding:40px 10px;">No posts found.</div>`;
@@ -849,35 +861,50 @@ function renderPostsFeedAndDeepDive(data) {
   }
 
   const sortedPosts = [...posts].sort((a, b) => b.likes - a.likes);
-  
+
   if (!state.selectedPost || !sortedPosts.some(p => p.index === state.selectedPost.index)) {
     state.selectedPost = sortedPosts[0];
   }
-  
+
   feedContainer.innerHTML = sortedPosts.map((post, i) => {
     const isSelected = state.selectedPost && state.selectedPost.index === post.index;
     const activeClass = isSelected ? 'feed-item active' : 'feed-item';
     const cleanSnippet = (post.snippet || post.caption?.substring(0, 48) || '—').replace(/"/g, '&quot;');
     const isVideo = post.type?.toLowerCase().includes('video') || post.type?.toLowerCase().includes('reel');
-    
+
     // SVG icon for post type
-    const postIcon = isVideo 
+    const postIcon = isVideo
       ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`
       : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>`;
-    
+
     return `
       <div class="${activeClass}" data-post-index="${post.index}">
         <div class="feed-rank">${i + 1}</div>
         <div class="feed-thumb">${postIcon}</div>
         <div class="feed-body">
-          <div class="ttl">${post.index} <span style="color:var(--faint);font-weight:500;font-size:11px">· ${post.date || '—'}</span></div>
+          <div class="ttl">
+            ${post.index} 
+            ${post.is_above_baseline 
+              ? '<span style="color:var(--accent);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(198,255,58,0.1);">WIN</span>' 
+              : '<span style="color:var(--neg);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(255,99,99,0.1);">FIX</span>'}
+            <span style="color:var(--faint);font-weight:500;font-size:11px;margin-left:4px;">· ${post.date || '—'}</span>
+          </div>
           <div class="cap">${cleanSnippet}</div>
         </div>
-        <div class="feed-likes">❤ ${post.likes.toLocaleString()}</div>
+        <div class="feed-likes">
+          <span style="color: var(--neg);">❤</span> ${post.likes.toLocaleString()}
+          <a href="${post.url || '#'}" target="_blank" style="color:var(--accent);text-decoration:none;margin-left:8px;" title="View Live Post" onclick="event.stopPropagation()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+        </div>
       </div>
     `;
   }).join('');
-  
+
   // Bind clicks
   feedContainer.querySelectorAll('.feed-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -891,14 +918,14 @@ function renderPostsFeedAndDeepDive(data) {
       }
     });
   });
-  
+
   renderPostDeepDive(state.selectedPost);
 }
 
 function renderPostDeepDive(post) {
   const viewer = document.getElementById('post-deep-dive-viewer');
   if (!viewer) return;
-  
+
   if (!post) {
     viewer.innerHTML = `
       <div style="text-align:center; padding: 60px 20px; color: var(--faint);">
@@ -908,21 +935,21 @@ function renderPostDeepDive(post) {
     `;
     return;
   }
-  
+
   const briefMarkdown = post.log_content || post.brief || 'No diagnostic audit brief available.';
   const briefHtml = parseMarkdown(briefMarkdown);
   const caption = post.caption || 'No caption text exists for this post.';
-  
+
   // Extract hashtags
   const matches = caption.match(/#[a-zA-Z0-9_]+/g) || [];
   const uniqueTags = Array.from(new Set(matches.map(t => t.toLowerCase())));
   const tagsHtml = uniqueTags.length > 0
     ? uniqueTags.map(tag => `<span class="htag" onclick="clip('${tag}', '${tag}')"> ${tag}</span>`).join('')
     : '';
-    
+
   // Clean caption text of tags for clean render
   const captionTextOnly = caption.replace(/#[a-zA-Z0-9_]+/g, '').trim();
-  
+
   viewer.innerHTML = `
     <div class="diag">
       <div class="diag-head">
@@ -933,7 +960,7 @@ function renderPostDeepDive(post) {
         <span class="pill dot ${post.is_above_baseline ? 'win' : 'fix'}">${post.is_above_baseline ? 'Above Baseline' : 'Below Baseline'}</span>
       </div>
       <div class="diag-actions">
-        ${post.post_url ? `<button class="btn btn-ghost" onclick="window.open('${post.post_url}', '_blank')">↗ Open the Post</button>` : ''}
+        ${post.post_url ? `<button class="btn" style="background:var(--accent);color:var(--bg);font-weight:700;border:none;" onclick="window.open('${post.post_url}', '_blank')">↗ Open the Post</button>` : ''}
         <button class="btn btn-ghost" onclick="clip(\`${caption.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, 'Caption')">⧉ Copy Caption</button>
       </div>
       <div class="caption-box">
@@ -959,7 +986,7 @@ function renderCompetitors(competitors) {
     anchor.innerHTML = `<div style="text-align:center;color:var(--faint);padding:20px;">No competitors found</div>`;
     return;
   }
-  
+
   let cardsHtml = '';
   competitors.forEach(comp => {
     const handleName = comp.competitor_name;
@@ -970,7 +997,7 @@ function renderCompetitors(competitors) {
     const velocity = comp.metrics?.posting_frequency_daily ?? 0;
     const ghostPct = comp.metrics?.inactive_follower_percentage ?? 0;
     const realPct = (100 - ghostPct).toFixed(1);
-    
+
     const bestLikes = comp.metrics?.best_post?.likes ?? 0;
     const worstLikes = comp.metrics?.worst_post?.likes ?? 0;
 
@@ -1024,14 +1051,16 @@ function renderCompetitors(competitors) {
           <div class="comp-highlights">
             <div>
               <span class="comp-highlight-title">Best Post</span>
-              <a href="${comp.metrics?.best_post?.url || '#'}" target="_blank" class="comp-highlight-btn best">
+              <a href="${comp.metrics?.best_post?.url || '#'}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
+                <svg style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${bestLikes.toLocaleString()}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Likes</div>
               </a>
             </div>
             <div>
               <span class="comp-highlight-title">Worst Post</span>
-              <a href="${comp.metrics?.worst_post?.url || '#'}" target="_blank" class="comp-highlight-btn worst">
+              <a href="${comp.metrics?.worst_post?.url || '#'}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
+                <svg style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${worstLikes.toLocaleString()}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Likes</div>
               </a>
@@ -1042,8 +1071,9 @@ function renderCompetitors(competitors) {
       </div>
     `;
   });
-  
+
   anchor.innerHTML = cardsHtml;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 // ─── HASHTAG INTEL SYNCHRONOUS COMPILER ───
@@ -1312,26 +1342,43 @@ function getDisplayUrl(url) {
 function parseMarkdown(mdText) {
   if (!mdText) return '';
   let html = mdText;
-  
-  html = html.replace(/### (.*?)(?:\n|$)/g, (match, p1) => {
-    const text = p1.trim();
-    const isWin = text.includes("👑") || text.includes("📋") || text.includes("SUCCESS") || text.includes("REPLICATION") || text.includes("Assessment") || text.includes("STRATEGY") || text.includes("RECOMMENDATION") || text.includes("🟢") || text.includes("WIN");
-    const colorClass = isWin ? 'text-indigo-800' : 'text-rose-700';
-    return `<h4 style="margin-top:12px;margin-bottom:6px;font-weight:700;" class="${colorClass}">${text}</h4>`;
+
+  // 1. Convert uppercase titles with emojis
+  html = html.replace(/^(?:### )?([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])?\s*([A-Z0-9\s_&]+)\s*(?:\n|$)/gmu, (match, emoji, text) => {
+    if (!text || text.trim().length < 3) return match;
+    const cleanedText = text.trim();
+    const isWarn = cleanedText.includes("FRICTION") || cleanedText.includes("AVOID") || cleanedText.includes("DROP");
+    const colorVar = isWarn ? 'var(--warn)' : 'var(--accent)';
+    const emojiStr = emoji ? `<span style="margin-right: 8px; font-size: 1.1em;">${emoji}</span>` : '';
+    return `<h4 style="margin-top:24px;margin-bottom:12px;font-weight:800;letter-spacing:0.04em;color:${colorVar};display:flex;align-items:center;text-transform:uppercase;font-size:13px;">${emojiStr}${cleanedText}</h4>`;
   });
+
+  // Backup for explicit ### tags
+  html = html.replace(/### (.*?)(?:\n|$)/g, '<h4 style="margin-top:16px;margin-bottom:8px;font-weight:800;color:var(--accent);letter-spacing:0.04em;text-transform:uppercase;font-size:13px;">$1</h4>');
+  html = html.replace(/## (.*?)(?:\n|$)/g, '<h3 style="margin-top:20px;margin-bottom:10px;font-weight:800;color:var(--pos);letter-spacing:0.04em;text-transform:uppercase;font-size:14px;">$1</h3>');
+
+  // Highlight bold tags with our pos color
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--pos);font-weight:700;">$1</strong>');
   
-  html = html.replace(/## (.*?)(?:\n|$)/g, '<h3 style="margin-top:16px;margin-bottom:8px;font-weight:700;">$1</h3>');
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/^\* (.*?)(?:\n|$)/gm, '<li>$1</li>');
-  html = html.replace(/^- (.*?)(?:\n|$)/gm, '<li>$1</li>');
-  html = html.replace(/((?:<li>.*?<\/li>)+)/gs, '<ul style="padding-left:18px;margin:8px 0;">$1</ul>');
+  // Lists
+  html = html.replace(/^\* (.*?)(?:\n|$)/gm, '<li style="margin-bottom:8px;line-height:1.55;color:#e2e2e9;">$1</li>');
+  html = html.replace(/^- (.*?)(?:\n|$)/gm, '<li style="margin-bottom:8px;line-height:1.55;color:#e2e2e9;">$1</li>');
+  html = html.replace(/((?:<li.*?>.*?<\/li>\n?)+)/gs, '<ul style="padding-left:0;margin:12px 0 20px 0;list-style:none;">$1</ul>');
+  
+  // Custom list items with cute bullet
+  html = html.replace(/<li style="(.*?)">(.*?)<\/li>/g, '<li style="$1;display:flex;align-items:flex-start;"><span style="color:var(--accent);margin-right:8px;font-size:14px;margin-top:2px;">✦</span><span style="flex:1;">$2</span></li>');
+
+  // Replace remaining newlines
   html = html.replace(/\n/g, '<br>');
+  // Remove consecutive breaks
+  html = html.replace(/(<br>\s*){2,}/g, '<br><br>');
+  
   return html;
 }
 
 // ─── TOAST NOTIFICATION ───
 var _toastT;
-window.toast = function(msg) {
+window.toast = function (msg) {
   var el = document.getElementById('toast');
   if (!el) return;
   el.textContent = msg;
@@ -1340,10 +1387,10 @@ window.toast = function(msg) {
   _toastT = setTimeout(function () { el.classList.remove('show'); }, 1800);
 }
 
-window.clip = function(text, label) {
+window.clip = function (text, label) {
   if (!text) return;
-  try { 
-    navigator.clipboard.writeText(text); 
+  try {
+    navigator.clipboard.writeText(text);
     window.toast((label || 'Copied') + ' → clipboard');
   } catch (e) {
     console.warn('Could not copy to clipboard:', e);
@@ -1351,7 +1398,7 @@ window.clip = function(text, label) {
 }
 
 // ─── PALETTE SWITCHER ───
-window.setPalette = function(btn) {
+window.setPalette = function (btn) {
   document.documentElement.setAttribute('data-palette', btn.dataset.p);
   document.querySelectorAll('.pal-btn').forEach(function (b) {
     b.classList.toggle('active', b === btn);
@@ -1366,9 +1413,9 @@ window.setPalette = function(btn) {
     }
   } else {
     // Redraw defaults
-    drawChart('chart-growth', [40,42,41,45,47,46,49,52,54,57,59,63], 'var(--accent)');
-    drawChart('chart-reels',  [5900,1200,900,5800], 'var(--acc2)');
-    drawChart('chart-reach',  [610,140,90,420],     'var(--acc2)');
+    drawChart('chart-growth', [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63], 'var(--accent)');
+    drawChart('chart-reels', [5900, 1200, 900, 5800], 'var(--acc2)');
+    drawChart('chart-reach', [610, 140, 90, 420], 'var(--acc2)');
   }
 }
 
@@ -1402,14 +1449,14 @@ function countUp(el) {
 }
 
 // ─── SVG LINE CHART RENDERER ───
-window.drawChart = function(id, pts, stroke, h, labels) {
+window.drawChart = function (id, pts, stroke, h, labels) {
   var el = document.getElementById(id);
   if (!el) return;
   stroke = stroke || 'var(--accent)';
   h = h || 148;
   var W = 480, H = h;
   var padLeft = 52, padRight = 16, padTop = 16, padBottom = 20;
-  
+
   var max = Math.max.apply(null, pts);
   var min = Math.min.apply(null, pts);
   // Ensure we have a span
@@ -1419,7 +1466,7 @@ window.drawChart = function(id, pts, stroke, h, labels) {
   var span = (max - min) || 1;
   var n = pts.length;
   if (n < 2) return;
-  
+
   var xs = function (i) { return padLeft + (i * (W - padLeft - padRight)) / (n - 1); };
   var ys = function (v) { return H - padBottom - ((v - min) / span) * (H - padTop - padBottom); };
   var P = pts.map(function (v, i) { return [xs(i), ys(v)]; });
@@ -1458,14 +1505,14 @@ window.drawChart = function(id, pts, stroke, h, labels) {
     var val = min + span * g;
     var y = ys(val);
     var isBoundary = (g === 0 || g === 1);
-    
-    gridLinesHtml += '<line x1="' + padLeft + '" x2="' + (W - padRight) + '" y1="' + y + '" y2="' + y + 
+
+    gridLinesHtml += '<line x1="' + padLeft + '" x2="' + (W - padRight) + '" y1="' + y + '" y2="' + y +
       '" stroke="var(--grid)" stroke-width="' + (isBoundary ? 0 : 1) + '"/>';
-      
-    gridLinesHtml += '<line x1="' + (padLeft - 4) + '" x2="' + padLeft + '" y1="' + y + '" y2="' + y + 
+
+    gridLinesHtml += '<line x1="' + (padLeft - 4) + '" x2="' + padLeft + '" y1="' + y + '" y2="' + y +
       '" stroke="var(--border-s)" stroke-width="1"/>';
-      
-    gridLinesHtml += '<text x="' + (padLeft - 8) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9px" fill="var(--faint)">' + 
+
+    gridLinesHtml += '<text x="' + (padLeft - 8) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9px" fill="var(--faint)">' +
       formatYAxis(val) + '</text>';
   });
 
@@ -1474,15 +1521,22 @@ window.drawChart = function(id, pts, stroke, h, labels) {
   // X-axis line
   gridLinesHtml += '<line x1="' + padLeft + '" x2="' + (W - padRight) + '" y1="' + (H - padBottom) + '" y2="' + (H - padBottom) + '" stroke="var(--border-s)" stroke-width="1"/>';
 
-  var hoverSvg = 
+  // Y-Axis Title
+  var yLabelTxt = id === 'chart-growth' ? 'Followers' : id === 'chart-reels' ? 'Views' : 'Reach';
+  gridLinesHtml += '<text x="12" y="' + (H / 2) + '" text-anchor="middle" transform="rotate(-90 12,' + (H / 2) + ')" font-size="10px" font-weight="600" fill="var(--faint)" letter-spacing="1">' + yLabelTxt.toUpperCase() + '</text>';
+  
+  // X-Axis Title
+  gridLinesHtml += '<text x="' + (padLeft + (W - padLeft - padRight) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="10px" font-weight="600" fill="var(--faint)" letter-spacing="1">DATE</text>';
+
+  var hoverSvg =
     '<g class="hover-grp" style="display: none; pointer-events: none;">' +
-      '<line class="hover-ln" x1="0" x2="0" y1="' + padTop + '" y2="' + (H - padBottom) + '" stroke="var(--border-s)" stroke-width="1.2" stroke-dasharray="3,3"/>' +
-      '<circle class="hover-pt" cx="0" cy="0" r="5" fill="var(--surf)" stroke="var(--text)" stroke-width="2"/>' +
-      '<g class="hover-tooltip">' +
-        '<rect class="hover-bg" rx="6" ry="6" fill="var(--surf3)" stroke="var(--border-s)" stroke-width="1" width="80" height="42" x="-40" y="-48"/>' +
-        '<text class="hover-date" x="0" y="-30" text-anchor="middle" font-size="9px" fill="var(--muted)">Date</text>' +
-        '<text class="hover-txt" x="0" y="-16" text-anchor="middle" font-size="11px" font-weight="700" fill="var(--text)">0</text>' +
-      '</g>' +
+    '<line class="hover-ln" x1="0" x2="0" y1="' + padTop + '" y2="' + (H - padBottom) + '" stroke="var(--border-s)" stroke-width="1.2" stroke-dasharray="3,3"/>' +
+    '<circle class="hover-pt" cx="0" cy="0" r="5" fill="var(--surf)" stroke="var(--text)" stroke-width="2"/>' +
+    '<g class="hover-tooltip">' +
+    '<rect class="hover-bg" rx="6" ry="6" fill="var(--surf3)" stroke="var(--border-s)" stroke-width="1" width="80" height="42" x="-40" y="-48"/>' +
+    '<text class="hover-date" x="0" y="-30" text-anchor="middle" font-size="9px" fill="var(--muted)">Date</text>' +
+    '<text class="hover-txt" x="0" y="-16" text-anchor="middle" font-size="11px" font-weight="700" fill="var(--text)">0</text>' +
+    '</g>' +
     '</g>';
 
   el.innerHTML =
@@ -1508,10 +1562,10 @@ window.drawChart = function(id, pts, stroke, h, labels) {
   var hoverDate = el.querySelector('.hover-date');
   var hoverTxt = el.querySelector('.hover-txt');
 
-  svgEl.addEventListener('mousemove', function(e) {
+  svgEl.addEventListener('mousemove', function (e) {
     var rect = svgEl.getBoundingClientRect();
     var mouseX = ((e.clientX - rect.left) / rect.width) * W;
-    
+
     // Find closest point index
     var closestI = 0;
     var minDistance = Infinity;
@@ -1529,7 +1583,7 @@ window.drawChart = function(id, pts, stroke, h, labels) {
     var dateLabel = (labels && labels[closestI]) ? labels[closestI] : '';
 
     hoverGrp.style.display = 'block';
-    
+
     // Move vertical line and point
     hoverLn.setAttribute('x1', px);
     hoverLn.setAttribute('x2', px);
@@ -1541,7 +1595,7 @@ window.drawChart = function(id, pts, stroke, h, labels) {
     var tooltipH = dateLabel ? 42 : 28;
     var tx = px;
     var ty = py;
-    
+
     var localX = -tooltipW / 2;
     var localY = -tooltipH - 6;
 
@@ -1560,13 +1614,13 @@ window.drawChart = function(id, pts, stroke, h, labels) {
     hoverBg.setAttribute('x', localX);
     hoverBg.setAttribute('y', localY);
     hoverBg.setAttribute('height', tooltipH);
-    
+
     if (dateLabel) {
       hoverDate.style.display = 'block';
       hoverDate.textContent = dateLabel;
       hoverDate.setAttribute('x', localX + tooltipW / 2);
       hoverDate.setAttribute('y', localY + 12);
-      
+
       hoverTxt.setAttribute('x', localX + tooltipW / 2);
       hoverTxt.setAttribute('y', localY + 28);
     } else {
@@ -1574,11 +1628,11 @@ window.drawChart = function(id, pts, stroke, h, labels) {
       hoverTxt.setAttribute('x', localX + tooltipW / 2);
       hoverTxt.setAttribute('y', localY + 18);
     }
-    
+
     hoverTxt.textContent = val.toLocaleString();
   });
 
-  svgEl.addEventListener('mouseleave', function() {
+  svgEl.addEventListener('mouseleave', function () {
     hoverGrp.style.display = 'none';
   });
 }

@@ -117,23 +117,18 @@
         <div class="profile-strip">
           <div class="ps-av" id="profile-initials">--</div>
           <div class="ps-handle">
-            <a id="profile-link" href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 6px;">
+            <a id="profile-link" href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 8px;">
               <span id="profile-handle">@username</span>
               <span class="post-link-btn" style="margin-left: 0;">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                   <polyline points="15 3 21 3 21 9"/>
                   <line x1="10" y1="14" x2="21" y2="3"/>
                 </svg>
               </span>
             </a>
-            <span class="ps-verified">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l2.4 1.8 3-.2 1 2.8 2.6 1.6-.8 2.9.8 2.9-2.6 1.6-1 2.8-3-.2L12 22l-2.4-1.8-3 .2-1-2.8L3 16.2l.8-2.9L3 10.4l2.6-1.6 1-2.8 3 .2z"/>
-                <path d="M9.5 12.5l1.8 1.8 3.5-3.8" fill="none" stroke="var(--acc-ink)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
           </div>
+          <div class="ps-spacer" style="flex: 1;"></div>
           <div class="ps-div"></div>
           <div class="ps-stat">
             <div class="k">Posts Looked At</div>
@@ -154,7 +149,6 @@
             <div class="k">Total Followers</div>
             <div class="v" id="stat-total-followers">0</div>
           </div>
-          <div class="ps-spacer"></div>
         </div>
 
         <!-- ── 4 metric cards ── -->
@@ -163,7 +157,6 @@
           <div class="card metric good" id="kpi-er-card">
             <div class="metric-top">
               <span class="label">How Much People Interact</span>
-              <span class="metric-ico">⚡</span>
             </div>
             <div class="big"><span class="cu" id="kpi-er" data-val="0">0</span><span class="u">%</span></div>
             <div class="desc">Engagement Rate</div>
@@ -172,7 +165,6 @@
           <div class="card metric warnv" id="kpi-inactive-card">
             <div class="metric-top">
               <span class="label">Followers That Look Fake</span>
-              <span class="metric-ico">👻</span>
             </div>
             <div class="big"><span class="cu" id="kpi-inactive" data-val="0">0</span><span class="u">%</span></div>
             <div class="desc">These accounts seem to be bots or people who never log in.</div>
@@ -181,7 +173,6 @@
           <div class="card metric pos" id="kpi-authenticity-card">
             <div class="metric-top">
               <span class="label">Followers That Look Real</span>
-              <span class="metric-ico">✓</span>
             </div>
             <div class="big"><span class="cu" id="kpi-authenticity" data-val="0">0</span><span class="u">%</span></div>
             <div class="desc">Real, active people who actually see and react to posts.</div>
@@ -190,7 +181,6 @@
           <div class="card metric" id="kpi-velocity-card">
             <div class="metric-top">
               <span class="label">How Often They Post</span>
-              <span class="metric-ico">📅</span>
             </div>
             <div class="big"><span class="cu" id="kpi-velocity" data-val="0">0</span><span class="u">/day</span></div>
             <div class="desc">The average count of posts published to this feed per day.</div>
@@ -201,12 +191,9 @@
         <!-- ── Videos vs Photos ── -->
         <div class="card" id="format-battle-container">
           <div class="card-h">
-            <div class="t"><span class="ico">⚔</span> Videos vs. Photos — What Works Better?</div>
-            <div id="format-battle-badge-container">
-              <span class="pill win">Evaluating Format...</span>
-            </div>
+            <div class="t"><span class="ico">⚔</span> Reels vs Photos</div>
           </div>
-          <div class="battle winR">
+          <div class="battle">
 
             <div class="battle-side left">
               <div class="bs-header">
@@ -245,7 +232,7 @@
           <!-- Benchmark -->
           <div class="card" id="niche-benchmark-card">
             <div class="card-h">
-              <div class="t"><span class="ico">◎</span> How They Compare to Similar Accounts</div>
+              <div class="t"><span class="ico">◎</span> Engagement Benchmarks</div>
               <span id="benchmark-tier-label" class="pill">N/A</span>
             </div>
 
@@ -268,7 +255,7 @@
                   <div class="band-seg" style="background:var(--neg)"></div>
                   <div class="band-seg" style="background:var(--warn)"></div>
                   <div class="band-seg" style="background:var(--accent)"></div>
-                  <div class="band-seg"></div>
+                  <div class="band-seg" style="background:var(--pos)"></div>
                 </div>
               </div>
               <div class="bands-labels">
@@ -312,7 +299,7 @@
         <div class="grid g2">
           <div class="card">
             <div class="card-h">
-              <div class="t"><span class="ico">📈</span> How Many People Watched the Videos</div>
+              <div class="t"><span class="ico">📈</span> How Many People Watched the Reels</div>
               <span class="pill" style="font-size:9px">VIEWS</span>
             </div>
             <div class="chart">
@@ -340,12 +327,12 @@
         <div class="grid g4">
           <div class="card statline">
             <div class="v"><span class="cu" id="median-likes-value" data-val="0">0</span></div>
-            <div class="k">Typical Likes per Post</div>
+            <div class="k">Median Likes</div>
             <div class="d">A normal post lands around here.</div>
           </div>
           <div class="card statline">
             <div class="v"><span class="cu" id="median-comments-value" data-val="0">0</span></div>
-            <div class="k">Typical Comments per Post</div>
+            <div class="k">Median Comments</div>
             <div class="d">How many people usually comment.</div>
           </div>
           <div class="card statline">
@@ -353,7 +340,7 @@
             <div class="k">Average Likes per Post</div>
             <div class="d">A few big posts pull this number up.</div>
           </div>
-          <div class="card statline day-card">
+          <div class="card statline">
             <div class="k">Busiest Posting Day</div>
             <div class="v" id="most-active-day-value">--</div>
             <div class="d">The day of the week they post most often.</div>
@@ -363,6 +350,9 @@
         <!-- ── Peak / low ── -->
         <div class="grid g2">
           <div class="linkrow peak" id="best-post-row">
+            <div style="width:64px; height:64px; border-radius:6px; overflow:hidden; flex-shrink:0; margin-right:12px; background:#1f2937;">
+              <img id="best-post-thumbnail" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" style="width:100%; height:100%; object-fit:cover;" alt="Best Post Thumbnail" />
+            </div>
             <div class="lr-lab">
               <div class="t">Their Best Post</div>
               <div class="u" id="best-post-link">Loading...</div>
@@ -370,6 +360,9 @@
             <div class="lr-stat" id="best-post-stats">0 likes · 0 comments</div>
           </div>
           <div class="linkrow low" id="worst-post-row">
+            <div style="width:64px; height:64px; border-radius:6px; overflow:hidden; flex-shrink:0; margin-right:12px; background:#1f2937;">
+              <img id="worst-post-thumbnail" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" style="width:100%; height:100%; object-fit:cover;" alt="Worst Post Thumbnail" />
+            </div>
             <div class="lr-lab">
               <div class="t">Their Weakest Post</div>
               <div class="u" id="worst-post-link">Loading...</div>

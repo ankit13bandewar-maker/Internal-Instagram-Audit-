@@ -1579,22 +1579,25 @@
 }
 
 .competitor-section-title {
-  font-size: 20px;
-  font-weight: 900;
+  font-family: var(--font-d);
+  font-size: 24px;
+  font-weight: 700;
   color: var(--color-primary-dark);
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0 0 4px;
 }
 
 .competitor-section-title svg {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   color: var(--color-primary);
 }
 
 .competitor-subtitle {
-  font-size: 13px;
+  font-size: 14px;
+  color: var(--muted);
   font-weight: 500;
   color: var(--color-zinc-500);
 }

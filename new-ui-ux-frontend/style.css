@@ -352,8 +352,8 @@ button { cursor: pointer; font-family: inherit; }
   gap: 8px;
   font-family: var(--font-b);
   font-weight: 700;
-  font-size: 13px;
-  letter-spacing: .03em;
+  font-size: 21px;
+  letter-spacing: .02em;
 }
 .card-h .ico {
   width: 26px; height: 26px;
@@ -366,16 +366,16 @@ button { cursor: pointer; font-family: inherit; }
   font-size: 13px;
 }
 .card-sub {
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--muted);
   margin: -8px 0 16px;
 }
 
 /* ── Grid ───────────────────────────────────────────────────── */
 .grid { display: grid; gap: var(--gap); }
-.g4 { grid-template-columns: repeat(4, 1fr); }
-.g3 { grid-template-columns: repeat(3, 1fr); }
-.g2 { grid-template-columns: 1fr 1fr; }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 980px) {
   .g4 { grid-template-columns: repeat(2, 1fr); }
   .g3, .g2 { grid-template-columns: 1fr; }
@@ -445,16 +445,19 @@ button { cursor: pointer; font-family: inherit; }
 .ps-verified { color: var(--accent); line-height: 0; }
 .ps-div { width: 1px; height: 32px; background: var(--border); }
 .ps-stat .k {
-  font-size: 9.5px;
+  font-family: var(--font-d);
+  font-weight: 800;
+  font-size: 12px;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: #ffffff;
   margin-bottom: 2px;
 }
 .ps-stat .v {
   font-family: var(--font-d);
   font-weight: 700;
   font-size: 18px;
+  color: var(--accent);
 }
 .ps-spacer { flex: 1; }
 
@@ -473,11 +476,12 @@ button { cursor: pointer; font-family: inherit; }
   justify-content: space-between;
 }
 .metric .label {
-  font-size: 10px;
+  font-family: var(--font-d);
+  font-size: 13px;
   letter-spacing: .13em;
   text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 700;
+  color: #ffffff;
+  font-weight: 800;
   line-height: 1.4;
 }
 .metric .big {
@@ -487,6 +491,7 @@ button { cursor: pointer; font-family: inherit; }
   line-height: .92;
   letter-spacing: -.025em;
   margin-top: auto;
+  color: var(--accent);
 }
 .metric .big .u {
   font-size: .38em;
@@ -495,7 +500,7 @@ button { cursor: pointer; font-family: inherit; }
   letter-spacing: 0;
   margin-left: 3px;
 }
-.metric .desc { font-size: 11.5px; color: var(--faint); line-height: 1.45; }
+.metric .desc { font-size: 13px; color: #fff; line-height: 1.45; }
 .metric-ico {
   width: 30px; height: 30px;
   border-radius: 9px;
@@ -548,6 +553,8 @@ button { cursor: pointer; font-family: inherit; }
 .bs-meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
 .battle.winR .battle-side.right .bs-num,
 .battle.winL .battle-side.left  .bs-num { color: var(--accent); }
+.battle.winR .battle-side.left .bs-num,
+.battle.winL .battle-side.right .bs-num { color: var(--neg); }
 .vs-col {
   display: flex;
   align-items: center;
@@ -611,7 +618,7 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--neg);
+  color: var(--muted);
 }
 
 /* ── Benchmark ──────────────────────────────────────────────── */
@@ -637,8 +644,8 @@ button { cursor: pointer; font-family: inherit; }
   color: var(--muted);
 }
 .bench-desc {
-  font-size: 12.5px;
-  color: var(--faint);
+  font-size: 14px;
+  color: #fff;
   line-height: 1.5;
   margin: 0;
 }
@@ -660,25 +667,26 @@ button { cursor: pointer; font-family: inherit; }
   pointer-events: none;
 }
 .band-marker-tag {
-  font-size: 9.5px;
+  font-family: var(--font-b);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: .05em;
+  letter-spacing: .03em;
   color: var(--text);
   white-space: nowrap;
 }
 .band-marker-stem {
   display: block;
-  width: 1px;
+  width: 1.5px;
   height: 12px;
-  background: var(--border-s);
+  background: var(--text);
 }
 .band-marker-dot {
   display: block;
-  width: 10px; height: 10px;
+  width: 16px; height: 16px;
   border-radius: 50%;
   background: var(--text);
-  border: 2px solid var(--bg);
-  margin-top: -1px;
+  border: 3px solid var(--bg);
+  margin-top: -2px;
 }
 .bands-bar {
   display: grid;
@@ -695,8 +703,8 @@ button { cursor: pointer; font-family: inherit; }
   margin-top: 5px;
 }
 .band-lbl {
-  font-size: 9.5px;
-  color: var(--faint);
+  font-size: 10.5px;
+  color: #fff;
   text-align: center;
   letter-spacing: .04em;
 }
@@ -716,10 +724,10 @@ button { cursor: pointer; font-family: inherit; }
 }
 .bc-cell { flex: 1; }
 .bc-k {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: #fff;
   margin-bottom: 3px;
 }
 .bc-v {
@@ -754,9 +762,10 @@ button { cursor: pointer; font-family: inherit; }
   font-size: clamp(24px, 2.8vw, 34px);
   letter-spacing: -.02em;
   line-height: 1;
+  color: var(--accent);
 }
-.statline .k { font-size: 11px; font-weight: 700; letter-spacing: .03em; }
-.statline .d { font-size: 11px; color: var(--faint); }
+.statline .k { font-size: 13px; font-weight: 700; letter-spacing: .03em; }
+.statline .d { font-size: 13.5px; color: #fff; }
 .day-card {
   background: linear-gradient(140deg, var(--accent), color-mix(in oklab, var(--accent) 55%, var(--surf)));
   color: var(--acc-ink);
@@ -771,8 +780,8 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 13px 16px;
+  gap: 16px;
+  padding: 24px 28px;
   background: var(--surf2);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -780,29 +789,36 @@ button { cursor: pointer; font-family: inherit; }
   transition: border-color .14s;
 }
 .linkrow:hover { border-color: var(--border-s); }
-.lr-lab { display: flex; flex-direction: column; gap: 2px; }
+.lr-lab { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  flex: 1;
+  min-width: 0;
+}
 .lr-lab .t {
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: .12em;
   text-transform: uppercase;
   font-weight: 700;
 }
 .lr-lab .u {
-  font-size: 11.5px;
+  font-size: 14px;
   font-family: var(--font-d);
   color: var(--accent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 300px;
+  max-width: 100%;
 }
 .lr-stat {
   font-family: var(--font-d);
   font-weight: 600;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   white-space: nowrap;
   text-align: right;
+  flex-shrink: 0;
 }
 .linkrow.peak .lr-lab .t { color: var(--accent); }
 .linkrow.low  .lr-lab .t { color: var(--warn); }
@@ -1086,8 +1102,16 @@ button { cursor: pointer; font-family: inherit; }
 .strat-item .txt { font-size: 13px; line-height: 1.5; }
 .strat-item .txt b { font-family: var(--font-d); }
 
-/* ── Kill list ──────────────────────────────────────────────── */
-.kill-list { display: flex; flex-direction: column; gap: 9px; }
+.kill-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 9px; 
+  max-height: 395px; 
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.kill-list::-webkit-scrollbar { width: 4px; }
+.kill-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .kill-item {
   padding: 13px 14px;
   border-radius: 12px;
@@ -1253,7 +1277,7 @@ button { cursor: pointer; font-family: inherit; }
 .sec-head .n {
   font-family: var(--font-d);
   font-weight: 700;
-  font-size: clamp(19px, 2.3vw, 25px);
+  font-size: clamp(24px, 3vw, 32px);
   letter-spacing: -.02em;
   display: flex;
   align-items: center;
@@ -1262,7 +1286,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .sec-head .n .ic { color: var(--accent); }
 .sec-head .line { flex: 1; height: 1px; background: var(--border); }
-.sec-head p { margin: 0; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.sec-head p { margin: 0; color: #fff; font-size: 15px; white-space: nowrap; }
 
 /* ── Footnote ───────────────────────────────────────────────── */
 .foot { font-size: 10.5px; color: var(--faint); margin-top: 11px; font-style: italic; }
@@ -1498,7 +1522,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .competitor-section-title {
   font-family: var(--font-d);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1506,7 +1530,7 @@ button { cursor: pointer; font-family: inherit; }
   margin: 0 0 4px;
 }
 .competitor-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   margin: 0;
 }

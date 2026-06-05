@@ -208,10 +208,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <!-- FORMAT PERFORMANCE BATTLE (HIDDEN BY DEFAULT) -->
             <div id="format-battle-container" class="format-battle-card hidden">
               <div class="format-battle-header">
-                <h3 class="format-battle-title">Format Performance Battle</h3>
-                <div id="format-battle-badge-container">
-                  <!-- Dynamic badge injected here -->
-                </div>
+                <h3 class="format-battle-title">Reels vs Photos</h3>
               </div>
               <div class="format-battle-grid">
                 <!-- REELS COLUMN -->

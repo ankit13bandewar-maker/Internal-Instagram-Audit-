@@ -128,11 +128,17 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             if not post_url:
                 post_url = profile_url.rstrip('/')
 
+            shares = max(0, int(post.get("sharesCount") if post.get("sharesCount") is not None else post.get("shares", 0)))
+            saves = max(0, int(post.get("savesCount") if post.get("savesCount") is not None else post.get("saves", 0)))
+            display_url = post.get("displayUrl") or post.get("thumbnailUrl") or ""
             parsed_posts.append({
                 "index": f"Post {idx}",
                 "date": timestamp[:10] if timestamp else "—",
                 "likes": likes,
                 "comments": comments,
+                "shares": shares,
+                "saves": saves,
+                "display_url": display_url,
                 "type": post.get("type", "Image") or "Image",
                 "caption": caption,
                 "snippet": snippet,
