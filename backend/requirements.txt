@@ -1,20 +1,26 @@
-# streamlit
-# apify-client
-# requests
-# plotly
-# python-dotenv
-# google-genai
-# pandas
-# fastapi
-# uvicorn
-# plotly>=5.0.0
+# ==========================================
+# Client & Competitor Audit Tool Backend Requirements
+# Install with: pip install -r requirements.txt
+# ==========================================
 
-
-httpx>=0.24,<0.26
+# Core API and Web Server
 fastapi==0.110.0
 uvicorn==0.28.0
+python-multipart>=0.0.9
+
+# Data Processing
 pandas>=2.2.3
-google-generativeai==0.4.1
+numpy>=1.26.0
+
+# API Fetching & Scraping Services
+requests>=2.31.0
+httpx>=0.24,<0.26
 apify-client==1.7.0
 apify-shared==1.1.1
+
+# AI Diagnostics & Analysis Integration
+google-generativeai==0.4.1
+google-genai>=2.3.0
+
+# Environment Configuration
 python-dotenv==1.0.1
