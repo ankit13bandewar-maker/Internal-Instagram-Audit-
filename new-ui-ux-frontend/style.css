@@ -1626,7 +1626,7 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
@@ -1649,7 +1649,7 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
 }
 .comp-ghost-val {
@@ -1667,7 +1667,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .comp-highlight-title {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   color: var(--muted);
   margin-bottom: 6px;
