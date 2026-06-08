@@ -17,7 +17,3 @@ services:
       - key: SUPABASE_KEY
         sync: false
 
-  # 2. HTML/CSS/JS Frontend
-  - type: static
-    name: client-audit-frontend
-    publishPath: new-ui-ux-frontend
