@@ -3222,13 +3222,16 @@ function renderPostDeepDive(post) {
 function renderCompetitors(competitors) {
   const anchor = document.getElementById('competitor-anchor');
   if (!anchor) return;
-  if (!competitors || competitors.length === 0) {
-    anchor.innerHTML = `<div style="text-align:center;color:var(--faint);padding:20px;">No competitors found</div>`;
+  // Filter out any dead/deleted profiles that failed to scrape
+  const validCompetitors = competitors.filter(comp => comp && comp.follower_count > 0);
+
+  if (validCompetitors.length === 0) {
+    anchor.innerHTML = `<div style="text-align:center;color:var(--faint);padding:20px;">No valid competitors found</div>`;
     return;
   }
 
   let cardsHtml = '';
-  competitors.forEach(comp => {
+  validCompetitors.forEach(comp => {
     const handleName = comp.competitor_name;
     const cleanHandle = handleName.replace(/[^a-zA-Z0-9_.]/g, '');
     const followersFormatted = comp.follower_count.toLocaleString();
