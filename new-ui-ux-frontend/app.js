@@ -3,6 +3,15 @@ const BACKEND_URL = 'https://client-audit-tool.onrender.com';
 const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
 
 // APP STATE
+function resolvePostUrl(post) {
+  if (!post) return '#';
+  let url = post.post_url || post.url || post.link || post.shortcode || '';
+  if (!url) return '#';
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/')) return 'https://www.instagram.com' + url;
+  return 'https://www.instagram.com/p/' + url + '/';
+}
+
 let state = {
   loading: false,
   progress: 0,
