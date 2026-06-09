@@ -516,8 +516,8 @@ function displayDashboard(rawData) {
     }
   }
   
-  // 5. Ingest Competitor cards
-  renderCompetitors(competitorData);
+  // 9. Ingest Competitor cards
+  renderCompetitors(competitorData, data.follower_count || 0);
   
   // Update Lucide icons
   if (window.lucide) {
@@ -764,10 +764,17 @@ function renderCharts(rawData) {
 }
 
 // ─── COMPETITORS CARD DRAWING ───
-function renderCompetitors(competitors) {
+function renderCompetitors(competitors, clientFollowers = 0) {
   const anchor = document.getElementById('competitor-anchor');
-  // Filter out any dead/deleted profiles that failed to scrape
-  const validCompetitors = competitors.filter(comp => comp && comp.follower_count > 0);
+  if (!anchor) return;
+  
+  // Filter out invalid/dead accounts, AND accounts that are way too small compared to the client (e.g. less than 5% of client followers)
+  const validCompetitors = competitors.filter(c => {
+    if (c.is_invalid || !c.competitor_name) return false;
+    if ((c.follower_count || 0) <= 0) return false;
+    if ((c.follower_count || 0) < 10000 && (c.follower_count || 0) < (clientFollowers * 0.05)) return false;
+    return true;
+  });
 
   if (validCompetitors.length === 0) {
     anchor.innerHTML = `<div style="text-align:center;color:var(--faint);padding:20px;">No valid competitors found</div>`;
@@ -848,7 +855,7 @@ function renderCompetitors(competitors) {
               <a href="${resolvePostUrl(comp.metrics?.best_post)}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${bestPostInteractions}</span>
-                <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Interactions</div>
+                <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">View Live Post</div>
               </a>
             </div>
             <div>
@@ -856,7 +863,7 @@ function renderCompetitors(competitors) {
               <a href="${resolvePostUrl(comp.metrics?.worst_post)}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${worstPostInteractions}</span>
-                <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Interactions</div>
+                <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">View Live Post</div>
               </a>
             </div>
           </div>
@@ -1206,7 +1213,7 @@ function renderMedianMetricsAndBestWorst(data) {
   
   const dayWithMostPosts = data.calculated_metrics?.day_with_most_posts ?? getDayWithMostPosts(posts);
   
-  const sortedPosts = [...posts].sort((a, b) => b.likes - a.likes);
+  const sortedPosts = [...posts].sort((a, b) => (b.likes || 0) - (a.likes || 0));
   const bestPost = sortedPosts[0] || { likes: 0, comments: 0, post_url: '#' };
   const worstPost = sortedPosts[sortedPosts.length - 1] || { likes: 0, comments: 0, post_url: '#' };
   
@@ -1219,7 +1226,7 @@ function renderMedianMetricsAndBestWorst(data) {
   const bestLink = document.getElementById('best-post-link');
   if (bestLink) {
     bestLink.href = resolvePostUrl(bestPost);
-    bestLink.textContent = bestPost.post_url || 'No URL available';
+    bestLink.textContent = 'View Live Post';
   }
   const bestThumb = document.getElementById('best-post-thumbnail');
   if (bestThumb && bestPost.display_url) {
@@ -1230,7 +1237,7 @@ function renderMedianMetricsAndBestWorst(data) {
   const worstLink = document.getElementById('worst-post-link');
   if (worstLink) {
     worstLink.href = resolvePostUrl(worstPost);
-    worstLink.textContent = worstPost.post_url || 'No URL available';
+    worstLink.textContent = 'View Live Post';
   }
   const worstThumb = document.getElementById('worst-post-thumbnail');
   if (worstThumb && worstPost.display_url) {
@@ -1250,7 +1257,7 @@ function renderPostsFeedAndDeepDive(data) {
   }
 
   // Sort descending by likes performance
-  const sortedPosts = [...posts].sort((a, b) => b.likes - a.likes);
+  const sortedPosts = [...posts].sort((a, b) => (b.likes || 0) - (a.likes || 0));
   
   // Set default selected post to first post if none selected or if selected is not in current data
   if (!state.selectedPost || !sortedPosts.some(p => p.index === state.selectedPost.index)) {

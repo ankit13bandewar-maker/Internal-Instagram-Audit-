@@ -521,7 +521,7 @@ function displayDashboard(rawData) {
   }
 
   // 9. Ingest Competitor cards
-  renderCompetitors(competitorData);
+  renderCompetitors(competitorData, data.follower_count || 0);
 
   // Highlight active sidebar item
   document.querySelectorAll('#history-list .acct').forEach(el => {
@@ -816,7 +816,7 @@ function renderMedianMetricsAndBestWorst(data) {
   const bestLinkEl = document.getElementById('best-post-link');
   if (bestLinkEl) {
     bestLinkEl.innerHTML = `<a href="${resolvePostUrl(bestPost)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
-      ${getDisplayUrl(bestPost.post_url)}
+      View Live Post
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -839,7 +839,7 @@ function renderMedianMetricsAndBestWorst(data) {
   const worstLinkEl = document.getElementById('worst-post-link');
   if (worstLinkEl) {
     worstLinkEl.innerHTML = `<a href="${resolvePostUrl(worstPost)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
-      ${getDisplayUrl(worstPost.post_url)}
+      View Live Post
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -876,7 +876,7 @@ function renderPostsFeedAndDeepDive(data) {
   }
 
   feedContainer.innerHTML = sortedPosts.map((post, i) => {
-    const isSelected = state.selectedPost && state.selectedPost.index === post.index;
+    const isSelected = state.selectedPost && (state.selectedPost.index === post.index || state.selectedPost === post);
     const activeClass = isSelected ? 'feed-item active' : 'feed-item';
     const cleanSnippet = (post.snippet || post.caption?.substring(0, 48) || '—').replace(/"/g, '&quot;');
     const isVideo = post.type?.toLowerCase().includes('video') || post.type?.toLowerCase().includes('reel');
@@ -901,7 +901,7 @@ function renderPostsFeedAndDeepDive(data) {
           <div class="cap">${cleanSnippet}</div>
         </div>
         <div class="feed-likes">
-          <span style="color: var(--neg);">❤</span> ${post.likes.toLocaleString()}
+          <span style="color: var(--neg);">❤</span> ${(post.likes || 0).toLocaleString()}
           <a href="${resolvePostUrl(post)}" target="_blank" style="color:var(--accent);text-decoration:none;margin-left:8px;" title="View Live Post" onclick="event.stopPropagation()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -988,11 +988,17 @@ function renderPostDeepDive(post) {
 }
 
 // ─── COMPETITORS CARD DRAWING ───
-function renderCompetitors(competitors) {
+function renderCompetitors(competitors, clientFollowers = 0) {
   const anchor = document.getElementById('competitor-anchor');
   if (!anchor) return;
-  // Filter out any dead/deleted profiles that failed to scrape
-  const validCompetitors = competitors.filter(comp => comp && comp.follower_count > 0);
+  
+  // Filter out invalid/dead accounts, AND accounts that are way too small compared to the client (e.g. less than 5% of client followers)
+  const validCompetitors = competitors.filter(c => {
+    if (c.is_invalid || !c.competitor_name) return false;
+    if ((c.follower_count || 0) <= 0) return false;
+    if ((c.follower_count || 0) < 10000 && (c.follower_count || 0) < (clientFollowers * 0.05)) return false;
+    return true;
+  });
 
   if (validCompetitors.length === 0) {
     anchor.innerHTML = `<div style="text-align:center;color:var(--faint);padding:20px;">No valid competitors found</div>`;
