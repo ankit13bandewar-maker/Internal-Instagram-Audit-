@@ -1,5 +1,5 @@
 // CONFIGURATION Constants
-const BACKEND_URL = 'http://127.0.0.1:8000';
+const BACKEND_URL = 'https://client-audit-tool.onrender.com';
 const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
 
 // APP STATE
@@ -990,7 +990,7 @@ function renderCompetitors(competitors) {
   let cardsHtml = '';
   competitors.forEach(comp => {
     const handleName = comp.competitor_name;
-    const cleanHandle = handleName.replace('@', '').trim();
+    const cleanHandle = handleName.replace(/[^a-zA-Z0-9_.]/g, '');
     const followersFormatted = comp.follower_count.toLocaleString();
     const er = comp.metrics?.engagement_rate ?? 0;
     const barWidth = Math.min(er * 10, 100);
@@ -1006,11 +1006,11 @@ function renderCompetitors(competitors) {
         <div class="competitor-card-header">
           <div class="comp-rank-group">
             <span class="comp-rank-badge">#${comp.rank}</span>
-            <span class="comp-username">${handleName}</span>
+            <a href="https://www.instagram.com/${cleanHandle}" target="_blank" class="comp-username" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:6px; cursor:pointer; position:relative; z-index:10;" title="View Instagram Profile">
+              ${handleName}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
           </div>
-          <a href="https://www.instagram.com/${cleanHandle}" target="_blank" class="comp-link">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>
         </div>
         <div class="competitor-card-body">
           
