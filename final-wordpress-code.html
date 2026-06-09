@@ -2885,7 +2885,7 @@ function renderFormatPerformanceBattle(data) {
       reelsTopContainer.innerHTML = `<div style="font-size: 11px; color: var(--faint); font-style: italic; text-align: center; padding: 12px 0;">No Reels posts</div>`;
     } else {
       reelsTopContainer.innerHTML = reelsTop.slice(0, 5).map(post => `
-        <a href="${post.url || '#'}" target="_blank" class="post-row">
+        <a href="${resolvePostUrl(post)}" target="_blank" class="post-row">
           <span class="pn">
             <span class="post-lk">#</span>${post.index}
             <span class="post-link-btn">
@@ -2910,7 +2910,7 @@ function renderFormatPerformanceBattle(data) {
       staticTopContainer.innerHTML = `<div style="font-size: 11px; color: var(--faint); font-style: italic; text-align: center; padding: 12px 0;">No Photos posts</div>`;
     } else {
       staticTopContainer.innerHTML = staticTop.slice(0, 5).map(post => `
-        <a href="${post.url || '#'}" target="_blank" class="post-row">
+        <a href="${resolvePostUrl(post)}" target="_blank" class="post-row">
           <span class="pn">
             <span class="post-lk">#</span>${post.index}
             <span class="post-link-btn">
@@ -3046,7 +3046,7 @@ function renderMedianMetricsAndBestWorst(data) {
 
   const bestLinkEl = document.getElementById('best-post-link');
   if (bestLinkEl) {
-    bestLinkEl.innerHTML = `<a href="${bestPost.post_url}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+    bestLinkEl.innerHTML = `<a href="${resolvePostUrl(bestPost)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
       ${getDisplayUrl(bestPost.post_url)}
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -3069,7 +3069,7 @@ function renderMedianMetricsAndBestWorst(data) {
 
   const worstLinkEl = document.getElementById('worst-post-link');
   if (worstLinkEl) {
-    worstLinkEl.innerHTML = `<a href="${worstPost.post_url}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+    worstLinkEl.innerHTML = `<a href="${resolvePostUrl(worstPost)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
       ${getDisplayUrl(worstPost.post_url)}
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -3133,7 +3133,7 @@ function renderPostsFeedAndDeepDive(data) {
         </div>
         <div class="feed-likes">
           <span style="color: var(--neg);">❤</span> ${post.likes.toLocaleString()}
-          <a href="${post.url || '#'}" target="_blank" style="color:var(--accent);text-decoration:none;margin-left:8px;" title="View Live Post" onclick="event.stopPropagation()">
+          <a href="${resolvePostUrl(post)}" target="_blank" style="color:var(--accent);text-decoration:none;margin-left:8px;" title="View Live Post" onclick="event.stopPropagation()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>
@@ -3294,7 +3294,7 @@ function renderCompetitors(competitors) {
           <div class="comp-highlights">
             <div>
               <span class="comp-highlight-title">Best Post</span>
-              <a href="${comp.metrics?.best_post?.url || '#'}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
+              <a href="${resolvePostUrl(comp.metrics?.best_post)}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
                 <svg style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${bestLikes.toLocaleString()}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Likes</div>
@@ -3302,7 +3302,7 @@ function renderCompetitors(competitors) {
             </div>
             <div>
               <span class="comp-highlight-title">Worst Post</span>
-              <a href="${comp.metrics?.worst_post?.url || '#'}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
+              <a href="${resolvePostUrl(comp.metrics?.worst_post)}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
                 <svg style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${worstLikes.toLocaleString()}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Likes</div>

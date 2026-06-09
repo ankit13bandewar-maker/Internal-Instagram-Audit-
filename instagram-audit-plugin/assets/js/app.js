@@ -12,6 +12,16 @@ let state = {
   selectedPost: null
 };
 
+// URL RESOLVER
+function resolvePostUrl(post) {
+  if (!post) return '#';
+  let url = post.post_url || post.url || post.link || post.shortcode || '';
+  if (!url) return '#';
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/')) return 'https://www.instagram.com' + url;
+  return 'https://www.instagram.com/p/' + url + '/';
+}
+
 // SELECT DOM ELEMENTS
 const searchForm = document.getElementById('search-form');
 const profileUrlInput = document.getElementById('profile-url');
@@ -774,10 +784,7 @@ function renderCompetitors(competitors) {
     const velocity = comp.metrics?.posting_frequency_daily ?? 0;
     const ghostPct = comp.metrics?.inactive_follower_percentage ?? 0;
     
-    const bestPostUrl = comp.metrics?.best_post?.url || '#';
     const bestPostInteractions = ((comp.metrics?.best_post?.likes ?? 0) + (comp.metrics?.best_post?.comments ?? 0)).toLocaleString();
-    
-    const worstPostUrl = comp.metrics?.worst_post?.url || '#';
     const worstPostInteractions = ((comp.metrics?.worst_post?.likes ?? 0) + (comp.metrics?.worst_post?.comments ?? 0)).toLocaleString();
 
     cardsHtml += `
@@ -838,7 +845,7 @@ function renderCompetitors(competitors) {
           <div class="comp-highlights">
             <div>
               <span class="comp-highlight-title">Best Post</span>
-              <a href="${bestPostUrl}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
+              <a href="${resolvePostUrl(comp.metrics?.best_post)}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${bestPostInteractions}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Interactions</div>
@@ -846,7 +853,7 @@ function renderCompetitors(competitors) {
             </div>
             <div>
               <span class="comp-highlight-title">Worst Post</span>
-              <a href="${worstPostUrl}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
+              <a href="${resolvePostUrl(comp.metrics?.worst_post)}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${worstPostInteractions}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Interactions</div>
@@ -1211,7 +1218,7 @@ function renderMedianMetricsAndBestWorst(data) {
   document.getElementById('best-post-stats').textContent = `${(bestPost.likes || 0).toLocaleString()} Likes · ${(bestPost.comments || 0).toLocaleString()} Comments`;
   const bestLink = document.getElementById('best-post-link');
   if (bestLink) {
-    bestLink.href = bestPost.post_url || '#';
+    bestLink.href = resolvePostUrl(bestPost);
     bestLink.textContent = bestPost.post_url || 'No URL available';
   }
   const bestThumb = document.getElementById('best-post-thumbnail');
@@ -1222,7 +1229,7 @@ function renderMedianMetricsAndBestWorst(data) {
   document.getElementById('worst-post-stats').textContent = `${(worstPost.likes || 0).toLocaleString()} Likes · ${(worstPost.comments || 0).toLocaleString()} Comments`;
   const worstLink = document.getElementById('worst-post-link');
   if (worstLink) {
-    worstLink.href = worstPost.post_url || '#';
+    worstLink.href = resolvePostUrl(worstPost);
     worstLink.textContent = worstPost.post_url || 'No URL available';
   }
   const worstThumb = document.getElementById('worst-post-thumbnail');
@@ -1285,7 +1292,7 @@ function renderPostsFeedAndDeepDive(data) {
             <div class="feed-post-badges">
               <span class="win-fix-badge ${winFixClass}">${winFixText}</span>
               ${post.post_url ? `
-                <a href="${post.post_url}" target="_blank" class="feed-view-live-btn" onclick="event.stopPropagation();">
+                <a href="${resolvePostUrl(post)}" target="_blank" class="feed-view-live-btn" onclick="event.stopPropagation();">
                   View Live <i data-lucide="external-link" style="width:10px; height:10px;"></i>
                 </a>
               ` : ''}
@@ -1367,7 +1374,7 @@ function renderPostDeepDive(post) {
         
         <div class="viewer-actions">
           ${post.post_url ? `
-            <a href="${post.post_url}" target="_blank" class="viewer-action-btn live-btn">
+            <a href="${resolvePostUrl(post)}" target="_blank" class="viewer-action-btn live-btn">
               <i data-lucide="external-link" style="width:14px; height:14px;"></i>
               View Live Post
             </a>
@@ -1538,7 +1545,7 @@ function renderFormatPerformanceBattle(data) {
       reelsTopContainer.innerHTML = `<span style="font-size: 11px; color: var(--color-zinc-400); font-style: italic; text-align: center; display: block; padding: 12px 0;">No Reels posts</span>`;
     } else {
       reelsTopContainer.innerHTML = reelsTop.map((post, i) => `
-        <a href="${post.url || '#'}" target="_blank" class="format-post-item">
+        <a href="${resolvePostUrl(post)}" target="_blank" class="format-post-item">
           <span class="format-post-name">
             <i data-lucide="external-link"></i>
             ${post.index || `Post ${i + 1}`}
@@ -1560,7 +1567,7 @@ function renderFormatPerformanceBattle(data) {
       staticTopContainer.innerHTML = `<span style="font-size: 11px; color: var(--color-zinc-400); font-style: italic; text-align: center; display: block; padding: 12px 0;">No Static posts</span>`;
     } else {
       staticTopContainer.innerHTML = staticTop.map((post, i) => `
-        <a href="${post.url || '#'}" target="_blank" class="format-post-item">
+        <a href="${resolvePostUrl(post)}" target="_blank" class="format-post-item">
           <span class="format-post-name">
             <i data-lucide="external-link"></i>
             ${post.index || `Post ${i + 1}`}
