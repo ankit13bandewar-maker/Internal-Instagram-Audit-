@@ -429,8 +429,14 @@ function displayDashboard(rawData) {
     if (dates.length > 1) {
       // Ignore the 3 oldest posts in case they are pinned
       const recentDates = dates.length > 5 ? dates.slice(0, dates.length - 3) : dates;
-      const daysSpan = Math.max(1, (recentDates[0] - recentDates[recentDates.length - 1]) / (1000 * 60 * 60 * 24));
-      velocityVal = recentDates.length / daysSpan;
+      const daysSpan = (recentDates[0] - recentDates[recentDates.length - 1]) / (1000 * 60 * 60 * 24);
+      
+      if (daysSpan > 0) {
+        velocityVal = recentDates.length / daysSpan;
+      } else {
+        // If all posts were literally on the same day, or timestamps are identical
+        velocityVal = recentDates.length; 
+      }
     }
   } else if (clientStats.days_per_post && clientStats.days_per_post > 0) {
     velocityVal = 1 / clientStats.days_per_post;
