@@ -2361,27 +2361,21 @@ function resolvePostUrl(post) {
 
 async function fetchDynamicThumbnail(post, imgElement) {
   if (!post || !imgElement) return;
+  
+  const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://localhost:8000';
+  
+  // If we already have a displayUrl, use it (proxied)
   if (post.display_url && !post.display_url.includes('picsum.photos')) {
-    imgElement.src = post.display_url;
+    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}`;
     return;
   }
   
-  imgElement.src = `https://picsum.photos/seed/${post.shortcode || post.index}/100/100`;
-  
+  // Otherwise try to proxy the actual post page
   const url = resolvePostUrl(post);
   if (url && url !== '#') {
-    try {
-      const apiUrl = (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://localhost:8000') + `/api/proxy-image?url=${encodeURIComponent(url)}`;
-      const res = await fetch(apiUrl);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.thumbnail_url) {
-          imgElement.src = data.thumbnail_url;
-        }
-      }
-    } catch(e) {
-      console.log('Thumbnail extraction failed', e);
-    }
+    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(url)}`;
+  } else {
+    imgElement.src = `https://picsum.photos/seed/${post.shortcode || post.index}/100/100`;
   }
 }
 

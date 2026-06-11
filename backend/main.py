@@ -59,21 +59,34 @@ def root():
 def health_check():
     return {"status": "ok"}
 
+from fastapi.responses import Response
+
 @app.get("/api/proxy-image")
 def proxy_image(url: str):
     import requests, re
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
     }
     try:
-        r = requests.get(url, headers=headers, timeout=5)
-        m = re.search(r'<meta property="og:image"\s+content="([^"]+)"', r.text)
-        if m:
-            return {"thumbnail_url": m.group(1).replace('&amp;', '&')}
+        target_url = url
+        # If it's a post URL, extract the og:image CDN url
+        if "instagram.com/p/" in url or "instagram.com/reel/" in url or "instagram.com/tv/" in url:
+            r = requests.get(url, headers=headers, timeout=5)
+            m = re.search(r'<meta property="og:image"\s+content="([^"]+)"', r.text)
+            if m:
+                target_url = m.group(1).replace('&amp;', '&')
+            else:
+                return Response(status_code=404)
+        
+        # Fetch the actual bytes from the CDN
+        img_resp = requests.get(target_url, headers=headers, timeout=5)
+        if img_resp.status_code == 200:
+            return Response(content=img_resp.content, media_type=img_resp.headers.get("Content-Type", "image/jpeg"))
     except Exception:
         pass
-    return {"thumbnail_url": None}
+    
+    return Response(status_code=404)
 
 def get_real_follower_count(handle: str, fallback_calc: int) -> int:
     import requests, re, time
