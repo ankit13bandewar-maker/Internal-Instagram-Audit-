@@ -451,10 +451,10 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 
                 # Dynamic model rotation for maximum reliability and rate-limit resilience
                 models = [
-                    "gemini-1.5-pro",
-                    "gemini-1.5-flash",
                     "gemini-2.5-flash",
-                    "gemini-2.0-flash"
+                    "gemini-2.0-flash",
+                    "gemini-1.5-flash-latest",
+                    "gemini-1.5-pro-latest"
                 ]
                 text = ""
                 success = False
@@ -534,7 +534,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             education_competitors = ["sciencechannel", "neildegrassetyson", "billnye", "physicstoday", "scientific_american"]
             general_creators = ["mrbeast", "khaby00", "charliamelio", "addisonraee", "zachking"]
             
-            if "astro" in th or "zodiac" in th or "pandit" in th or "acharya" in th or "baba" in th or "guru" in th or "vedic" in th:
+            if any(k in th for k in ["astro", "zodiac", "pandit", "acharya", "baba", "guru", "vedic", "kundli", "tarot", "jyotish"]):
                 return [c for c in indian_competitors if c.lower() != th][:5]
             elif any(k in th for k in ["cric", "virat", "kohli", "dhoni", "rohit", "sachin", "sport", "game", "play", "football", "soccer", "tennis", "athlete"]):
                 return [c for c in sports_competitors if c.lower() != th][:5]
