@@ -2349,7 +2349,7 @@ async function fetchDynamicThumbnail(post, imgElement) {
   const url = resolvePostUrl(post);
   if (url && url !== '#') {
     try {
-      const apiUrl = (window.API_BASE_URL || 'http://localhost:8000') + `/api/proxy-image?url=${encodeURIComponent(url)}`;
+      const apiUrl = (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://localhost:8000') + `/api/proxy-image?url=${encodeURIComponent(url)}`;
       const res = await fetch(apiUrl);
       if (res.ok) {
         const data = await res.json();

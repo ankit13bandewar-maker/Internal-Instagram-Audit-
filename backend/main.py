@@ -484,9 +484,18 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                     else:
                         raise RuntimeError("All direct Gemini models failed and OpenRouter is not configured.")
                         
-                handles = [h.strip().lower() for h in text.replace("@", "").split(",") if h.strip()]
-                if len(handles) >= 3:
-                    return [h for h in handles if h != target_handle.lower()][:7]
+                import re
+                text = re.sub(r'```[a-zA-Z]*\n', '', text)
+                text = text.replace('```', '').replace('\n', '')
+                raw_handles = [h.strip().lower() for h in text.replace("@", "").split(",") if h.strip()]
+                clean_handles = []
+                for h in raw_handles:
+                    cleaned = re.sub(r'[^a-z0-9._]', '', h)
+                    if cleaned and cleaned != target_handle.lower():
+                        clean_handles.append(cleaned)
+                        
+                if len(clean_handles) >= 3:
+                    return clean_handles[:7]
             except Exception as e:
                 print(f"DEBUG: Dynamic competitors failed ({e}). Using niche fallback map.")
                 pass

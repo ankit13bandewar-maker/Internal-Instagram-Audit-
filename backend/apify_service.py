@@ -105,7 +105,7 @@ def _scrape_via_apify(profile_url: str) -> list:
     run_input = {
         "directUrls":        [profile_url],
         "resultsType":       "posts",
-        "resultsLimit":      MAX_POSTS,
+        "resultsLimit":      30,
         "addParentData":     False,
     }
 
