@@ -44,7 +44,8 @@ let state = {
   progress: 0,
   progressInterval: null,
   activeProfile: '',
-  selectedPost: null
+  selectedReel: null,
+  selectedStatic: null
 };
 
 // SELECT DOM ELEMENTS
@@ -1015,29 +1016,46 @@ function renderBestByType(data) {
 
 // ─── RENDERING FOR TWO-COLUMN FEED & DIAGNOSTICS ───
 function renderPostsFeedAndDeepDive(data) {
-  const feedContainer = document.getElementById('feed');
+  const posts = data.posts || [];
+  
+  const reelsPosts = posts.filter(p => p.type === 'Video' || p.type === 'GraphVideo' || p.type === 'clips' || p.is_video);
+  const staticPosts = posts.filter(p => !(p.type === 'Video' || p.type === 'GraphVideo' || p.type === 'clips' || p.is_video));
+  
+  const reelsLikes = reelsPosts.map(p => p.likes || 0);
+  const staticLikes = staticPosts.map(p => p.likes || 0);
+  
+  const reelsMedianLikes = Number((data.reels_median_likes ?? calculateMedian(reelsLikes)).toFixed(2));
+  const staticMedianLikes = Number((data.static_median_likes ?? calculateMedian(staticLikes)).toFixed(2));
+
+  _renderFeedList('reels-feed', 'reels-post-deep-dive-viewer', reelsPosts, reelsMedianLikes, 'selectedReel');
+  _renderFeedList('static-feed', 'static-post-deep-dive-viewer', staticPosts, staticMedianLikes, 'selectedStatic');
+}
+
+function _renderFeedList(feedId, viewerId, posts, medianLikes, stateKey) {
+  const feedContainer = document.getElementById(feedId);
   if (!feedContainer) return;
 
-  const posts = data.posts || [];
   if (posts.length === 0) {
     feedContainer.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--faint); padding:40px 10px;">No posts found.</div>`;
-    renderPostDeepDive(null);
+    renderPostDeepDive(null, viewerId);
     return;
   }
 
   const sortedPosts = [...posts].sort((a, b) => b.likes - a.likes);
 
-  if (!state.selectedPost || !sortedPosts.some(p => p.index === state.selectedPost.index)) {
-    state.selectedPost = sortedPosts[0];
+  if (!state[stateKey] || !sortedPosts.some(p => p.index === state[stateKey].index)) {
+    state[stateKey] = sortedPosts[0];
   }
 
   feedContainer.innerHTML = sortedPosts.map((post, i) => {
-    const isSelected = state.selectedPost && (state.selectedPost.index === post.index || state.selectedPost === post);
+    const isSelected = state[stateKey] && (state[stateKey].index === post.index || state[stateKey] === post);
     const activeClass = isSelected ? 'feed-item active' : 'feed-item';
     const cleanSnippet = (post.snippet || post.caption?.substring(0, 48) || '—').replace(/"/g, '&quot;');
     const isVideo = post.type?.toLowerCase().includes('video') || post.type?.toLowerCase().includes('reel');
+    
+    // Check WIN/FIX using specific median
+    const isWin = (post.likes || 0) >= medianLikes;
 
-    // SVG icon for post type
     const postIcon = isVideo
       ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`
       : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
@@ -1049,7 +1067,7 @@ function renderPostsFeedAndDeepDive(data) {
         <div class="feed-body">
           <div class="ttl">
             ${post.index} 
-            ${post.is_above_baseline 
+            ${isWin 
               ? '<span style="color:var(--accent);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(198,255,58,0.1);">WIN</span>' 
               : '<span style="color:var(--neg);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(255,99,99,0.1);">FIX</span>'}
             <span style="color:var(--faint);font-weight:500;font-size:11px;margin-left:4px;">· ${post.date || '—'}</span>
@@ -1078,17 +1096,17 @@ function renderPostsFeedAndDeepDive(data) {
       if (postObj) {
         feedContainer.querySelectorAll('.feed-item').forEach(el => el.classList.remove('active'));
         item.classList.add('active');
-        state.selectedPost = postObj;
-        renderPostDeepDive(postObj);
+        state[stateKey] = postObj;
+        renderPostDeepDive(postObj, viewerId);
       }
     });
   });
 
-  renderPostDeepDive(state.selectedPost);
+  renderPostDeepDive(state[stateKey], viewerId);
 }
 
-function renderPostDeepDive(post) {
-  const viewer = document.getElementById('post-deep-dive-viewer');
+function renderPostDeepDive(post, viewerId = 'post-deep-dive-viewer') {
+  const viewer = document.getElementById(viewerId);
   if (!viewer) return;
 
   if (!post) {
