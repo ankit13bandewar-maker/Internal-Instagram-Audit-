@@ -3162,10 +3162,18 @@ function renderMedianMetricsAndBestWorst(data) {
   const medianComments = Number((data.median_comments ?? calculateMedian(comments)).toFixed(2));
   const averageLikes = Number((data.average_likes ?? calculateAverage(likes)).toFixed(2));
   
-  const reelsMedianLikes = Number((data.reels_median_likes || 0).toFixed(2));
-  const reelsMedianComments = Number((data.reels_median_comments || 0).toFixed(2));
-  const staticMedianLikes = Number((data.static_median_likes || 0).toFixed(2));
-  const staticMedianComments = Number((data.static_median_comments || 0).toFixed(2));
+  const reelsPosts = posts.filter(p => p.type === 'Video' || p.is_video);
+  const staticPosts = posts.filter(p => p.type !== 'Video' && !p.is_video);
+  
+  const reelsLikes = reelsPosts.map(p => p.likes || 0);
+  const reelsComments = reelsPosts.map(p => p.comments || 0);
+  const staticLikes = staticPosts.map(p => p.likes || 0);
+  const staticComments = staticPosts.map(p => p.comments || 0);
+
+  const reelsMedianLikes = Number((data.reels_median_likes ?? calculateMedian(reelsLikes)).toFixed(2));
+  const reelsMedianComments = Number((data.reels_median_comments ?? calculateMedian(reelsComments)).toFixed(2));
+  const staticMedianLikes = Number((data.static_median_likes ?? calculateMedian(staticLikes)).toFixed(2));
+  const staticMedianComments = Number((data.static_median_comments ?? calculateMedian(staticComments)).toFixed(2));
 
   const getDayWithMostPosts = (postsList) => {
     if (!postsList || postsList.length === 0) return 'N/A';
