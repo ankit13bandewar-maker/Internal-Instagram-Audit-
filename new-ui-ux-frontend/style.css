@@ -769,7 +769,8 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   justify-content: space-between;
   font-size: 9.5px;
-  color: var(--faint);
+  color: var(--muted);
+  font-weight: 500;
   margin-top: 7px;
   letter-spacing: .02em;
 }

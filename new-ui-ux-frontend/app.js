@@ -1715,7 +1715,7 @@ window.drawChart = function (id, pts, stroke, h, labels) {
     gridLinesHtml += '<line x1="' + (padLeft - 4) + '" x2="' + padLeft + '" y1="' + y + '" y2="' + y +
       '" stroke="var(--border-s)" stroke-width="1"/>';
 
-    gridLinesHtml += '<text x="' + (padLeft - 8) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9px" fill="var(--faint)">' +
+    gridLinesHtml += '<text x="' + (padLeft - 8) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9px" font-weight="500" fill="var(--muted)">' +
       formatYAxis(val) + '</text>';
   });
 
@@ -1726,10 +1726,10 @@ window.drawChart = function (id, pts, stroke, h, labels) {
 
   // Y-Axis Title
   var yLabelTxt = id === 'chart-growth' ? 'Followers' : id === 'chart-reels' ? 'Views' : 'Reach';
-  gridLinesHtml += '<text x="12" y="' + (H / 2) + '" text-anchor="middle" transform="rotate(-90 12,' + (H / 2) + ')" font-size="10px" font-weight="600" fill="var(--faint)" letter-spacing="1">' + yLabelTxt.toUpperCase() + '</text>';
+  gridLinesHtml += '<text x="12" y="' + (H / 2) + '" text-anchor="middle" transform="rotate(-90 12,' + (H / 2) + ')" font-size="10px" font-weight="600" fill="var(--muted)" letter-spacing="1">' + yLabelTxt.toUpperCase() + '</text>';
   
   // X-Axis Title
-  gridLinesHtml += '<text x="' + (padLeft + (W - padLeft - padRight) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="10px" font-weight="600" fill="var(--faint)" letter-spacing="1">DATE</text>';
+  gridLinesHtml += '<text x="' + (padLeft + (W - padLeft - padRight) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="10px" font-weight="600" fill="var(--muted)" letter-spacing="1">DATE</text>';
 
   var hoverSvg =
     '<g class="hover-grp" style="display: none; pointer-events: none;">' +
