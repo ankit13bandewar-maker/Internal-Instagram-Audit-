@@ -2448,6 +2448,17 @@ async function loadHistory() {
         if (erVal > 3.5) directionClass = 'up';
         else if (erVal < 2.0) directionClass = 'dn';
 
+        let timeStr = 'Unknown Time';
+        if (item.audited_at) {
+          try {
+            const d = new Date(item.audited_at);
+            timeStr = d.toLocaleString('en-US', {
+              month: 'short', day: 'numeric',
+              hour: 'numeric', minute: '2-digit', hour12: true
+            });
+          } catch(e) {}
+        }
+
         const div = document.createElement('div');
         div.className = 'acct';
         if (state.activeProfile.includes(item.username)) {
@@ -2458,7 +2469,10 @@ async function loadHistory() {
           <div class="av">${initials}</div>
           <div class="acct-meta">
             <div class="h">@${item.username}</div>
-            <div class="s">${followersFormatted} followers</div>
+            <div class="s" style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+              <span>${followersFormatted} followers</span>
+              <span style="opacity:0.6; font-size:9.5px;">${timeStr}</span>
+            </div>
           </div>
           <div class="er ${directionClass}">${item.engagement_rate}%</div>
         `;
