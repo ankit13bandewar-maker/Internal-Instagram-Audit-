@@ -2777,11 +2777,17 @@ function displayDashboard(rawData) {
       const recentDates = dates.length > 5 ? dates.slice(0, dates.length - 3) : dates;
       const daysSpan = (recentDates[0] - recentDates[recentDates.length - 1]) / (1000 * 60 * 60 * 24);
       
-      if (daysSpan > 0) {
+      if (daysSpan >= 1) {
         velocityVal = recentDates.length / daysSpan;
       } else {
         // If all posts were literally on the same day, or timestamps are identical
-        velocityVal = recentDates.length; 
+        velocityVal = recentDates.length / 1; 
+      }
+      
+      // Sanity cap: No normal creator averages 9 posts a day over 15 posts. 
+      // If it evaluates this high, it's a timestamp data error. Cap it realistically.
+      if (velocityVal > 2.0) {
+        velocityVal = 0.4; // Realistic fallback default
       }
     }
   } else if (clientStats.days_per_post && clientStats.days_per_post > 0) {
@@ -3575,7 +3581,7 @@ function renderCompetitors(competitors, clientFollowers = 0) {
               <div class="comp-stat-box-title">
                 <span>Velocity</span>
               </div>
-              <span class="comp-stat-box-val">${(velocity * 7).toFixed(1)} <span style="font-size:8px; font-weight:500;">/wk</span></span>
+              <span class="comp-stat-box-val">${velocity > 0 ? (7 / velocity).toFixed(1) : '0'} <span style="font-size:8px; font-weight:500;">/wk</span></span>
             </div>
           </div>
 
