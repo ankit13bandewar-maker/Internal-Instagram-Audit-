@@ -3162,8 +3162,8 @@ function renderMedianMetricsAndBestWorst(data) {
   const medianComments = Number((data.median_comments ?? calculateMedian(comments)).toFixed(2));
   const averageLikes = Number((data.average_likes ?? calculateAverage(likes)).toFixed(2));
   
-  const reelsPosts = posts.filter(p => p.type === 'Video' || p.is_video);
-  const staticPosts = posts.filter(p => p.type !== 'Video' && !p.is_video);
+  const reelsPosts = posts.filter(p => p.type === 'Video' || p.type === 'GraphVideo' || p.type === 'clips' || p.is_video);
+  const staticPosts = posts.filter(p => !(p.type === 'Video' || p.type === 'GraphVideo' || p.type === 'clips' || p.is_video));
   
   const reelsLikes = reelsPosts.map(p => p.likes || 0);
   const reelsComments = reelsPosts.map(p => p.comments || 0);

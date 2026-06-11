@@ -195,6 +195,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             shares = max(0, int(post.get("sharesCount") if post.get("sharesCount") is not None else post.get("shares", 0)))
             saves = max(0, int(post.get("savesCount") if post.get("savesCount") is not None else post.get("saves", 0)))
             display_url = post.get("displayUrl") or post.get("thumbnailUrl") or ""
+            is_video_flag = post.get("type") == "Video" or post.get("productType") == "clips" or post.get("type") == "clips"
             parsed_posts.append({
                 "index": f"Post {idx}",
                 "date": timestamp[:10] if timestamp else "—",
@@ -204,7 +205,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 "shares": shares,
                 "saves": saves,
                 "display_url": display_url,
-                "type": post.get("type", "Image") or "Image",
+                "type": "Video" if is_video_flag else (post.get("type", "Image") or "Image"),
+                "is_video": is_video_flag,
                 "caption": caption,
                 "snippet": snippet,
                 "post_url": post_url,
