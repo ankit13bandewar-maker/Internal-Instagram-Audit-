@@ -755,7 +755,8 @@ def calculate_metrics_package(posts: list, follower_count: int) -> dict:
             # We exclude the 3 oldest posts from the 15-post batch to avoid heavily skewed velocity.
             recent_dates = sorted_dates[:-3] if len(sorted_dates) > 5 else sorted_dates
             
-            days_span = max((max(recent_dates) - min(recent_dates)).days, 1)
+            # Enforce a minimum 7-day span to smooth out bulk-uploads (e.g. 9 posts in 1 day)
+            days_span = max((max(recent_dates) - min(recent_dates)).days, 7)
             span_count = len(recent_dates)
             
             posts_per_week = round((span_count / days_span) * 7, 1)

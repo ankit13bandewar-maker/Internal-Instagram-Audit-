@@ -2778,18 +2778,9 @@ function displayDashboard(rawData) {
       const recentDates = dates.length > 5 ? dates.slice(0, dates.length - 3) : dates;
       const daysSpan = (recentDates[0] - recentDates[recentDates.length - 1]) / (1000 * 60 * 60 * 24);
       
-      if (daysSpan >= 1) {
-        velocityVal = recentDates.length / daysSpan;
-      } else {
-        // If all posts were literally on the same day, or timestamps are identical
-        velocityVal = recentDates.length / 1; 
-      }
-      
-      // Sanity cap: No normal creator averages 9 posts a day over 15 posts. 
-      // If it evaluates this high, it's a timestamp data error. Cap it realistically.
-      if (velocityVal > 2.0) {
-        velocityVal = 0.4; // Realistic fallback default
-      }
+      // Enforce a minimum span of 7 days to smooth out bulk-uploads (e.g. 9 posts in 1 day)
+      const smoothedDaysSpan = Math.max(daysSpan, 7);
+      velocityVal = recentDates.length / smoothedDaysSpan;
     }
   } else if (clientStats.days_per_post && clientStats.days_per_post > 0) {
     velocityVal = 1 / clientStats.days_per_post;
