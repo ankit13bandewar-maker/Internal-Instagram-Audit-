@@ -499,8 +499,16 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                         
                 import re
                 text = re.sub(r'```[a-zA-Z]*\n', '', text)
-                text = text.replace('```', '').replace('\n', '')
-                raw_handles = [h.strip().lower() for h in text.replace("@", "").split(",") if h.strip()]
+                text = text.replace('```', '')
+                
+                # Gemini often ignores "Return ONLY..." and adds preamble. The handles are usually on the last line.
+                lines = [line for line in text.split('\n') if line.strip()]
+                if not lines:
+                    raise ValueError("Empty response from LLM")
+                    
+                last_line = lines[-1]
+                raw_handles = [h.strip().lower() for h in last_line.replace("@", "").split(",") if h.strip()]
+                
                 clean_handles = []
                 for h in raw_handles:
                     cleaned = re.sub(r'[^a-z0-9._]', '', h)
