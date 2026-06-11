@@ -135,7 +135,8 @@ def _scrape_via_apify(profile_url: str) -> list:
             "shortcode":     shortcode,
             "displayUrl":    item.get("displayUrl") or item.get("thumbnailUrl") or "",
             "videoPlayCount": int(item.get("videoPlayCount") or item.get("videoViewCount") or item.get("playCount") or item.get("viewCount") or item.get("playsCount") or item.get("viewsCount") or 0),
-            "productType":   item.get("productType") or ""
+            "productType":   item.get("productType") or "",
+            "ownerFollowerCount": int(item.get("ownerFollowerCount", 0))
         })
 
     if not posts:
@@ -145,34 +146,81 @@ def _scrape_via_apify(profile_url: str) -> list:
 
 
 def get_real_follower_count(handle: str, fallback_calc: int) -> int:
+    import requests, re, time
+
+    # Method 1: Instagram web_profile_info API (most accurate) – retry 3 times
+    headers_api = {
+        'x-ig-app-id': '936619743392459',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': f'https://www.instagram.com/{handle}/',
+        'X-Requested-With': 'XMLHttpRequest',
+    }
+    for attempt in range(3):
+        try:
+            r = requests.get(
+                f"https://www.instagram.com/api/v1/users/web_profile_info/?username={handle}",
+                headers=headers_api, timeout=8
+            )
+            if r.status_code == 200:
+                data = r.json()
+                count = int(data['data']['user']['edge_followed_by']['count'])
+                if count > 0:
+                    return count
+            elif r.status_code == 429:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+        except Exception:
+            pass
+        if attempt < 2:
+            time.sleep(0.8)
+
+    # Method 2: Instagram GraphQL API
     try:
-        import requests
-        headers = {
+        gql_url = f"https://www.instagram.com/graphql/query/?query_hash=c9100bf9110dd6361671f113dd02e7d&variables=%7B%22user_id%22%3A%22{handle}%22%7D"
+        headers_gql = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'x-ig-app-id': '936619743392459',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
-        r = requests.get(f"https://www.instagram.com/api/v1/users/web_profile_info/?username={handle}", headers=headers, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            return int(data['data']['user']['edge_followed_by']['count'])
-    except:
+        r2 = requests.get(gql_url, headers=headers_gql, timeout=6)
+        if r2.status_code == 200:
+            gdata = r2.json()
+            count = gdata.get('data', {}).get('user', {}).get('edge_followed_by', {}).get('count', 0)
+            if count and int(count) > 0:
+                return int(count)
+    except Exception:
         pass
-    
-    # HTML parsing fallback
+
+    # Method 3: HTML scraping – tries to find decimal M values like "1.1M"
     try:
-        import requests, re
-        r = requests.get(f"https://www.instagram.com/{handle}/", timeout=5)
-        match = re.search(r'content="([^"]+?)\s+Followers', r.text)
+        headers_html = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+        }
+        r3 = requests.get(f"https://www.instagram.com/{handle}/", headers=headers_html, timeout=8)
+        html_text = r3.text
+        
+        # Try to find exact count embedded in page JSON
+        json_match = re.search(r'"edge_followed_by":\{"count":(\d+)', html_text)
+        if json_match:
+            return int(json_match.group(1))
+        
+        # Try og:description / meta content for follower count
+        match = re.search(r'content="([0-9,.]+(?:\.[0-9]+)?[MKmk]?)\s+[Ff]ollowers', html_text)
         if match:
-            fstr = match.group(1).upper()
+            fstr = match.group(1).upper().replace(',', '')
             if 'M' in fstr:
-                return int(float(fstr.replace('M','').strip()) * 1000000)
+                return int(float(fstr.replace('M', '').strip()) * 1_000_000)
             elif 'K' in fstr:
-                return int(float(fstr.replace('K','').strip()) * 1000)
+                return int(float(fstr.replace('K', '').strip()) * 1_000)
             else:
-                return int(fstr.replace(',', '').strip())
-    except:
+                val = int(fstr.strip())
+                if val > 0:
+                    return val
+    except Exception:
         pass
+
     return fallback_calc
 
 
@@ -395,7 +443,8 @@ def _generate_highly_authentic_posts(profile_url: str) -> list:
             "displayUrl": f"https://picsum.photos/100/100?random={i}",
             "videoPlayCount": video_play_count,
             "productType": product_type,
-            "is_mock": True
+            "is_mock": True,
+            "ownerFollowerCount": follower_count
         })
     return posts
 
@@ -427,6 +476,7 @@ def _scrape_via_instagram_api(profile_url: str) -> list:
     if not user:
         raise ValueError("No user found in IG API response")
         
+    exact_follower_count = int(user.get('edge_followed_by', {}).get('count', 0))
     edges = user.get('edge_owner_to_timeline_media', {}).get('edges', [])
     posts = []
     for edge in edges:
@@ -466,7 +516,8 @@ def _scrape_via_instagram_api(profile_url: str) -> list:
             "shortcode": shortcode,
             "displayUrl": node.get("display_url") or node.get("thumbnail_src") or "",
             "videoPlayCount": int(node.get("video_view_count") or 0),
-            "productType": node.get("product_type") or ""
+            "productType": node.get("product_type") or "",
+            "ownerFollowerCount": exact_follower_count
         })
     print(f"[IG API] Successfully fetched {len(posts)} posts for '{username}'")
     return posts

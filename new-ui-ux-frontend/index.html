@@ -162,14 +162,6 @@
             <div class="desc">Engagement Rate</div>
           </div>
 
-          <div class="card metric warnv" id="kpi-inactive-card">
-            <div class="metric-top">
-              <span class="label">Followers That Look Fake</span>
-            </div>
-            <div class="big"><span class="cu" id="kpi-inactive" data-val="0">0</span><span class="u">%</span></div>
-            <div class="desc">These accounts seem to be bots or people who never log in.</div>
-          </div>
-
           <div class="card metric pos" id="kpi-authenticity-card">
             <div class="metric-top">
               <span class="label">Followers That Look Real</span>
@@ -178,20 +170,29 @@
             <div class="desc">Real, active people who actually see and react to posts.</div>
           </div>
 
-          <div class="card metric" id="kpi-velocity-card">
+          <div class="card metric warnv" id="kpi-inactive-card">
             <div class="metric-top">
-              <span class="label">How Often They Post</span>
+              <span class="label">Inactive Followers</span>
             </div>
-            <div class="big"><span class="cu" id="kpi-velocity" data-val="0">0</span><span class="u">/day</span></div>
-            <div class="desc">The average count of posts published to this feed per day.</div>
+            <div class="big"><span class="cu" id="kpi-inactive" data-val="0">0</span><span class="u">%</span></div>
+            <div class="desc">These accounts seem to be bots or people who never log in.</div>
+          </div>
+
+          <div class="card metric" id="kpi-velocity-card">
+            <div class="metric-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span class="label" style="font-size: 16px; font-weight: 500; color: var(--text); margin: 0; text-transform: uppercase;">Avg. Posts / Day</span>
+            </div>
+            <div class="big" style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 32px; font-weight: 600; color: var(--text); line-height: 1;" class="cu" id="kpi-velocity" data-val="0">0</span>
+            </div>
           </div>
 
         </div>
 
-        <!-- ── Videos vs Photos ── -->
+        <!-- ── Videos vs Static Posts ── -->
         <div class="card" id="format-battle-container">
           <div class="card-h">
-            <div class="t"><span class="ico">⚔</span> Reels vs Photos</div>
+            <div class="t"><span class="ico">⚔</span> Reels vs Static Posts</div>
           </div>
           <div class="battle">
 
@@ -213,7 +214,7 @@
 
             <div class="battle-side right">
               <div class="bs-header">
-                <span class="bs-label" id="static-header-label">Photos</span>
+                <span class="bs-label" id="static-header-label">Static Posts</span>
               </div>
               <div class="bs-num"><span id="static-avg-likes" class="cu" data-val="0">0</span></div>
               <div class="bs-sub">Average likes per post</div>
@@ -282,7 +283,7 @@
           <!-- Growth chart -->
           <div class="card">
             <div class="card-h">
-              <div class="t"><span class="ico">📈</span> Followers Over Time</div>
+              <div class="t"><span class="ico">📈</span> Followers Growth</div>
               <span class="pill" style="font-size:9px">TREND</span>
             </div>
             <div class="chart">
@@ -368,6 +369,36 @@
               <div class="u" id="worst-post-link">Loading...</div>
             </div>
             <div class="lr-stat" id="worst-post-stats">0 likes · 0 comments</div>
+          </div>
+        </div>
+
+        <!-- ── Best of Each Type (Reel vs Static) ── -->
+        <div class="grid g2" id="best-by-type-section">
+          <div class="linkrow peak" id="best-reel-row">
+            <div style="width:64px; height:64px; border-radius:6px; overflow:hidden; flex-shrink:0; margin-right:12px; background:#1f2937; position:relative;">
+              <img id="best-reel-thumbnail" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" style="width:100%; height:100%; object-fit:cover;" alt="Best Reel Thumbnail" />
+              <div style="position:absolute; bottom:4px; right:4px; background:rgba(0,0,0,0.7); border-radius:4px; padding:1px 4px;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              </div>
+            </div>
+            <div class="lr-lab">
+              <div class="t">Their Best Reel</div>
+              <div class="u" id="best-reel-link">Loading...</div>
+            </div>
+            <div class="lr-stat" id="best-reel-stats">0 likes · 0 comments</div>
+          </div>
+          <div class="linkrow peak" id="best-static-row">
+            <div style="width:64px; height:64px; border-radius:6px; overflow:hidden; flex-shrink:0; margin-right:12px; background:#1f2937; position:relative;">
+              <img id="best-static-thumbnail" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" style="width:100%; height:100%; object-fit:cover;" alt="Best Static Post Thumbnail" />
+              <div style="position:absolute; bottom:4px; right:4px; background:rgba(0,0,0,0.7); border-radius:4px; padding:1px 4px;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+            </div>
+            <div class="lr-lab">
+              <div class="t">Their Best Static Post</div>
+              <div class="u" id="best-static-link">Loading...</div>
+            </div>
+            <div class="lr-stat" id="best-static-stats">0 likes · 0 comments</div>
           </div>
         </div>
 
@@ -507,6 +538,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="app.js"></script>
+<script src="app.js?v=20260611-fix3"></script>
 </body>
 </html>

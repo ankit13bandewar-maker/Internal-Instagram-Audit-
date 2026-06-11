@@ -1,5 +1,6 @@
 // CONFIGURATION Constants
-const BACKEND_URL = 'https://client-audit-tool.onrender.com';
+const BACKEND_URL = "http://localhost:8000";
+// const BACKEND_URL = "https://instagram-auditor-backend.onrender.com";
 const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
 
 // APP STATE
@@ -10,6 +11,32 @@ function resolvePostUrl(post) {
   if (url.startsWith('http')) return url;
   if (url.startsWith('/')) return 'https://www.instagram.com' + url;
   return 'https://www.instagram.com/p/' + url + '/';
+}
+
+async function fetchDynamicThumbnail(post, imgElement) {
+  if (!post || !imgElement) return;
+  if (post.display_url && !post.display_url.includes('picsum.photos')) {
+    imgElement.src = post.display_url;
+    return;
+  }
+  
+  imgElement.src = `https://picsum.photos/seed/${post.shortcode || post.index}/100/100`;
+  
+  const url = resolvePostUrl(post);
+  if (url && url !== '#') {
+    try {
+      const apiUrl = (window.API_BASE_URL || 'http://localhost:8000') + `/api/proxy-image?url=${encodeURIComponent(url)}`;
+      const res = await fetch(apiUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.thumbnail_url) {
+          imgElement.src = data.thumbnail_url;
+        }
+      }
+    } catch(e) {
+      console.log('Thumbnail extraction failed', e);
+    }
+  }
 }
 
 let state = {
@@ -343,11 +370,16 @@ function displayDashboard(rawData) {
     statTotalCommentsEl.textContent = totalComments.toLocaleString();
   }
 
-  const followersVal = clientStats.total_followers || data.follower_count || 0;
+  const followersVal = data.follower_count || clientStats.total_followers || 0;
   const statTotalFollowersEl = document.getElementById('stat-total-followers');
   if (statTotalFollowersEl) {
-    statTotalFollowersEl.dataset.val = followersVal;
-    statTotalFollowersEl.textContent = followersVal.toLocaleString();
+    const followersFormatted = followersVal >= 1000000 
+      ? (followersVal / 1000000).toFixed(1).replace(/\.0$/, '') + 'M' 
+      : followersVal >= 1000 
+        ? (followersVal / 1000).toFixed(1).replace(/\.0$/, '') + 'k' 
+        : String(followersVal);
+    statTotalFollowersEl.dataset.val = followersFormatted;
+    statTotalFollowersEl.textContent = followersFormatted;
   }
 
   // 2. Ingest KPI Cards
@@ -389,11 +421,35 @@ function displayDashboard(rawData) {
     }
   }
 
-  const velocityVal = clientStats.posting_frequency_daily || 0;
+  // Convert days_per_post into posts_per_day, calculating dynamically to protect against old cache payloads
+  let velocityVal = 0;
+  const postsList = data.posts || [];
+  
+  if (postsList.length > 1) {
+    const dates = postsList
+      .map(p => new Date(p.timestamp || p.date))
+      .filter(d => !isNaN(d.getTime()))
+      .sort((a, b) => b - a); // descending
+
+    if (dates.length > 1) {
+      // Ignore the 3 oldest posts in case they are pinned
+      const recentDates = dates.length > 5 ? dates.slice(0, dates.length - 3) : dates;
+      const daysSpan = Math.max(1, (recentDates[0] - recentDates[recentDates.length - 1]) / (1000 * 60 * 60 * 24));
+      velocityVal = recentDates.length / daysSpan;
+    }
+  } else if (clientStats.days_per_post && clientStats.days_per_post > 0) {
+    velocityVal = 1 / clientStats.days_per_post;
+  }
+
+  // Format nicely (e.g. 0.3 if low, or whole numbers)
+  const formattedVelocity = velocityVal < 0.1 && velocityVal > 0 
+    ? velocityVal.toFixed(2) 
+    : velocityVal.toFixed(1);
+
   const velocityEl = document.getElementById('kpi-velocity');
   if (velocityEl) {
-    velocityEl.dataset.val = velocityVal;
-    velocityEl.textContent = velocityVal;
+    velocityEl.dataset.val = formattedVelocity;
+    velocityEl.textContent = formattedVelocity;
   }
 
   // 3. Render SVG Charts
@@ -407,6 +463,9 @@ function displayDashboard(rawData) {
 
   // 6. Render Median Metrics and Best/Worst posts
   renderMedianMetricsAndBestWorst(data);
+
+  // 6b. Render Best Reel and Best Static Post
+  renderBestByType(data);
 
   // 7. Render Two-Column Post Feed and Diagnostic Viewer
   renderPostsFeedAndDeepDive(data);
@@ -545,20 +604,36 @@ function renderAllDynamicCharts(rawData) {
   const reachDistribution = rawData.reach_distribution_data || data.reach_distribution_data || [];
 
   // --- Chart 1: Audience Growth Timeline ---
+  function fmtTrendDate(d) {
+    // Convert YYYY-MM-DD to "May 12" format
+    if (!d) return d;
+    try {
+      const parts = d.split('-');
+      if (parts.length === 3) {
+        const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+    } catch(e) {}
+    return d;
+  }
   const trendPts = trendHistory.length >= 2 ? trendHistory.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
-  const trendLabels = trendHistory.length >= 2 ? trendHistory.map(item => item.date) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const trendLabels = trendHistory.length >= 2 ? trendHistory.map(item => fmtTrendDate(item.date)) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   drawChart('chart-growth', trendPts, 'var(--accent)', 148, trendLabels);
 
-  // Update growth dates axis-x
+  // Update growth dates axis-x (bottom labels below chart)
   const growthAxis = document.getElementById('growth-axis-x');
   if (growthAxis && trendHistory.length >= 2) {
     growthAxis.innerHTML = '';
-    const step = Math.max(1, Math.floor(trendHistory.length / 4));
+    const step = Math.max(1, Math.floor(trendHistory.length / 5));
     for (let i = 0; i < trendHistory.length; i += step) {
       const span = document.createElement('span');
-      span.textContent = trendHistory[i].date;
+      span.textContent = fmtTrendDate(trendHistory[i].date);
       growthAxis.appendChild(span);
     }
+    // Always add the last date
+    const lastSpan = document.createElement('span');
+    lastSpan.textContent = fmtTrendDate(trendHistory[trendHistory.length - 1].date);
+    growthAxis.appendChild(lastSpan);
   }
 
   // --- Chart 2: Reels Views Distribution ---
@@ -625,7 +700,7 @@ function renderFormatPerformanceBattle(data) {
   const staticComments = performanceSplit.static?.average_comments || 0;
 
   const staticHeader = document.getElementById('static-header-label');
-  if (staticHeader) staticHeader.textContent = `Photos · ${staticCount} posts`;
+  if (staticHeader) staticHeader.textContent = `Static Posts · ${staticCount} posts`;
 
   const staticAvgLikes = document.getElementById('static-avg-likes');
   if (staticAvgLikes) {
@@ -676,7 +751,7 @@ function renderFormatPerformanceBattle(data) {
   if (staticTopContainer) {
     const staticTop = performanceSplit.static?.top_posts || [];
     if (staticTop.length === 0) {
-      staticTopContainer.innerHTML = `<div style="font-size: 11px; color: var(--faint); font-style: italic; text-align: center; padding: 12px 0;">No Photos posts</div>`;
+      staticTopContainer.innerHTML = `<div style="font-size: 11px; color: var(--faint); font-style: italic; text-align: center; padding: 12px 0;">No Static Posts</div>`;
     } else {
       staticTopContainer.innerHTML = staticTop.slice(0, 5).map(post => `
         <a href="${resolvePostUrl(post)}" target="_blank" class="post-row">
@@ -829,8 +904,8 @@ function renderMedianMetricsAndBestWorst(data) {
   }
 
   const bestThumb = document.getElementById('best-post-thumbnail');
-  if (bestThumb && bestPost.display_url) {
-    bestThumb.src = bestPost.display_url;
+  if (bestThumb) {
+    fetchDynamicThumbnail(bestPost, bestThumb);
   }
 
   const worstStatsEl = document.getElementById('worst-post-stats');
@@ -852,8 +927,67 @@ function renderMedianMetricsAndBestWorst(data) {
   }
 
   const worstThumb = document.getElementById('worst-post-thumbnail');
-  if (worstThumb && worstPost.display_url) {
-    worstThumb.src = worstPost.display_url;
+  if (worstThumb) {
+    fetchDynamicThumbnail(worstPost, worstThumb);
+  }
+}
+
+// ─── RENDERING FOR BEST REEL & BEST STATIC POST ───
+function renderBestByType(data) {
+  const performanceSplit = data.performance_split;
+  if (!performanceSplit) return;
+
+  const reelsTop = performanceSplit.reels?.top_posts || [];
+  const staticTop = performanceSplit.static?.top_posts || [];
+
+  const rawBestReel = reelsTop.length > 0 ? reelsTop[0] : null;
+  const rawBestStatic = staticTop.length > 0 ? staticTop[0] : null;
+
+  const posts = data.posts || [];
+  const bestReel = rawBestReel ? posts.find(p => p.index === rawBestReel.index) : null;
+  const bestStatic = rawBestStatic ? posts.find(p => p.index === rawBestStatic.index) : null;
+
+  // Helper to build the "View Live Post" link HTML
+  const buildLinkHTML = (post) => {
+    if (!post) return '<span style="color:var(--faint); font-style:italic;">No posts of this type</span>';
+    return `<a href="${resolvePostUrl(post)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+      View Live Post
+      <span class="post-link-btn" style="margin-left: 6px;">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </span>
+    </a>`;
+  };
+
+  // --- Best Reel ---
+  const reelStatsEl = document.getElementById('best-reel-stats');
+  const reelLinkEl = document.getElementById('best-reel-link');
+  const reelThumb = document.getElementById('best-reel-thumbnail');
+
+  if (bestReel) {
+    if (reelStatsEl) reelStatsEl.textContent = `${(bestReel.likes || 0).toLocaleString()} likes \u00B7 ${(bestReel.comments || 0).toLocaleString()} comments`;
+    if (reelLinkEl) reelLinkEl.innerHTML = buildLinkHTML(bestReel);
+    if (reelThumb) fetchDynamicThumbnail(bestReel, reelThumb);
+  } else {
+    if (reelStatsEl) reelStatsEl.textContent = '—';
+    if (reelLinkEl) reelLinkEl.innerHTML = buildLinkHTML(null);
+  }
+
+  // --- Best Static Post ---
+  const staticStatsEl = document.getElementById('best-static-stats');
+  const staticLinkEl = document.getElementById('best-static-link');
+  const staticThumb = document.getElementById('best-static-thumbnail');
+
+  if (bestStatic) {
+    if (staticStatsEl) staticStatsEl.textContent = `${(bestStatic.likes || 0).toLocaleString()} likes \u00B7 ${(bestStatic.comments || 0).toLocaleString()} comments`;
+    if (staticLinkEl) staticLinkEl.innerHTML = buildLinkHTML(bestStatic);
+    if (staticThumb) fetchDynamicThumbnail(bestStatic, staticThumb);
+  } else {
+    if (staticStatsEl) staticStatsEl.textContent = '—';
+    if (staticLinkEl) staticLinkEl.innerHTML = buildLinkHTML(null);
   }
 }
 
@@ -884,7 +1018,7 @@ function renderPostsFeedAndDeepDive(data) {
     // SVG icon for post type
     const postIcon = isVideo
       ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`
-      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/></svg>`;
+      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
     return `
       <div class="${activeClass}" data-post-index="${post.index}">
@@ -1012,7 +1146,7 @@ function renderCompetitors(competitors, clientFollowers = 0) {
     const followersFormatted = comp.follower_count.toLocaleString();
     const er = comp.metrics?.engagement_rate ?? 0;
     const barWidth = Math.min(er * 10, 100);
-    const velocity = comp.metrics?.posting_frequency_daily ?? 0;
+    const velocity = comp.metrics?.days_per_post ?? 0;
     const ghostPct = comp.metrics?.inactive_follower_percentage ?? 0;
     const realPct = (100 - ghostPct).toFixed(1);
 
@@ -1461,6 +1595,11 @@ function countUp(el) {
     el.textContent = fmt(target * e);
     if (k < 1) raf = requestAnimationFrame(tick);
     else el.textContent = raw;
+  }
+  // If the raw value is already formatted (contains M/k), skip countUp and show as-is
+  if (/[Mk]$/.test(raw)) {
+    el.textContent = raw;
+    return;
   }
   raf = requestAnimationFrame(tick);
   setTimeout(function () { cancelAnimationFrame(raf); el.textContent = raw; }, dur + 300);

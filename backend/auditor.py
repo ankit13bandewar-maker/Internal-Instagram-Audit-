@@ -723,7 +723,7 @@ def calculate_metrics_package(posts: list, follower_count: int) -> dict:
     from datetime import datetime
     timestamps = [p.get("timestamp") or p.get("date") for p in posts if p.get("timestamp") or p.get("date")]
     posts_per_week = 0
-    posts_per_day = 0
+    days_per_post = 0
     day_with_most_posts = "N/A"
     if len(timestamps) > 0:
         valid_dates = []
@@ -743,10 +743,16 @@ def calculate_metrics_package(posts: list, follower_count: int) -> dict:
                 pass
         
         if len(valid_dates) > 1:
-            days_span = (max(valid_dates) - min(valid_dates)).days
-            if days_span > 0:
-                posts_per_week = round((total_posts / days_span) * 7, 1)
-                posts_per_day = round(total_posts / days_span, 1)
+            sorted_dates = sorted(valid_dates, reverse=True)
+            # Instagram allows up to 3 pinned posts which can be years old.
+            # We exclude the 3 oldest posts from the 15-post batch to avoid heavily skewed velocity.
+            recent_dates = sorted_dates[:-3] if len(sorted_dates) > 5 else sorted_dates
+            
+            days_span = max((max(recent_dates) - min(recent_dates)).days, 1)
+            span_count = len(recent_dates)
+            
+            posts_per_week = round((span_count / days_span) * 7, 1)
+            days_per_post = round(days_span / span_count, 1)
                 
         if valid_dates and max(days_of_week_count.values()) > 0:
             day_with_most_posts = max(days_of_week_count, key=days_of_week_count.get)
@@ -770,7 +776,7 @@ def calculate_metrics_package(posts: list, follower_count: int) -> dict:
         "inactive_follower_percentage": inactive_est,
         "audience_authenticity_score": audience_authenticity_score,
         "posting_frequency_weekly": posts_per_week,
-        "posting_frequency_daily": posts_per_day,
+        "days_per_post": days_per_post,
         "day_with_most_posts": day_with_most_posts,
         "median_likes": round(median_likes, 1),
         "median_comments": round(median_comments, 1),

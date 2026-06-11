@@ -10,6 +10,18 @@
   --font-d: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
   --font-b: 'Manrope', ui-sans-serif, system-ui, sans-serif;
 
+  /* Typography System */
+  --h1-size: 24px;
+  --h1-weight: 600;
+  --h1-lh: 1.3;
+  --h1-ls: -0.01em;
+
+  --h2-size: 14px;
+  --h2-weight: 500;
+  --h2-lh: 1.4;
+  --h2-ls: 0em;
+
+
   /* Lime Noir (default) */
   --bg:         #0A0A0E;
   --bg2:        #0E0E14;
@@ -237,11 +249,11 @@ button { cursor: pointer; font-family: inherit; }
 }
 .tb-title h1 {
   font-family: var(--font-d);
-  font-weight: 700;
-  font-size: clamp(17px, 2vw, 23px);
-  letter-spacing: -.02em;
+  font-weight: var(--h1-weight);
+  font-size: var(--h1-size);
+  line-height: var(--h1-lh);
+  letter-spacing: var(--h1-ls);
   margin: 0;
-  line-height: 1.2;
 }
 .tb-title p {
   margin: 4px 0 0;
@@ -351,9 +363,12 @@ button { cursor: pointer; font-family: inherit; }
   align-items: center;
   gap: 8px;
   font-family: var(--font-b);
-  font-weight: 700;
-  font-size: 21px;
-  letter-spacing: .02em;
+  font-weight: var(--h2-weight);
+  font-size: var(--h2-size);
+  line-height: var(--h2-lh);
+  letter-spacing: var(--h2-ls);
+  margin: 0;
+  padding: 0;
 }
 .card-h .ico {
   width: 26px; height: 26px;
@@ -366,9 +381,14 @@ button { cursor: pointer; font-family: inherit; }
   font-size: 13px;
 }
 .card-sub {
-  font-size: 13px;
+  font-family: var(--font-b);
+  font-weight: var(--h2-weight);
+  font-size: var(--h2-size);
+  line-height: var(--h2-lh);
+  letter-spacing: var(--h2-ls);
   color: var(--muted);
   margin: -8px 0 16px;
+  padding: 0;
 }
 
 /* ── Grid ───────────────────────────────────────────────────── */
@@ -1276,13 +1296,13 @@ button { cursor: pointer; font-family: inherit; }
 }
 .sec-head .n {
   font-family: var(--font-d);
-  font-weight: 700;
-  font-size: clamp(24px, 3vw, 32px);
-  letter-spacing: -.02em;
+  font-weight: var(--h1-weight);
+  font-size: var(--h1-size);
+  line-height: var(--h1-lh);
+  letter-spacing: var(--h1-ls);
   display: flex;
   align-items: center;
-  gap: 9px;
-  white-space: nowrap;
+  gap: 10px;
 }
 .sec-head .n .ic { color: var(--accent); }
 .sec-head .line { flex: 1; height: 1px; background: var(--border); }
@@ -1443,10 +1463,11 @@ button { cursor: pointer; font-family: inherit; }
 }
 .state-title {
   font-family: var(--font-d);
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  color: var(--text);
+  font-weight: var(--h1-weight);
+  font-size: var(--h1-size);
+  line-height: var(--h1-lh);
+  letter-spacing: var(--h1-ls);
+  margin: 0;
 }
 .state-desc {
   font-size: 14px;
@@ -1714,3 +1735,12 @@ button { cursor: pointer; font-family: inherit; }
   border-color: var(--border-s);
 }
 
+
+.main-title {
+  font-family: var(--font-d);
+  font-weight: var(--h1-weight);
+  font-size: var(--h1-size);
+  line-height: var(--h1-lh);
+  letter-spacing: var(--h1-ls);
+  margin: 0;
+}
