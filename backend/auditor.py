@@ -415,7 +415,7 @@ def generate_local_hashtag_audit_fallback(hashtag_data, overall_median_likes):
 * **Niche:** Use focused variations."""
 
 
-def run_batch_post_audits(posts, median_likes, median_comments):
+def run_batch_post_audits(posts, reels_median_likes, reels_median_comments, static_median_likes, static_median_comments):
     """
     Performs a batch audit of all 15 posts in a single unified call to the Gemini API,
     drastically reducing API requests from 15 to 1.
@@ -426,7 +426,12 @@ def run_batch_post_audits(posts, median_likes, median_comments):
     # 1. CASCADE IMMEDIATELY TO LOCAL DYNAMIC GENERATOR IF NO KEY IS CONFIGURED
     if not gemini_key:
         print("DEBUG: Missing GEMINI_API_KEY or genai library. Using dynamic local growth briefs.")
-        return {p["index"]: generate_local_fallback_brief(p, p["likes"] >= median_likes, median_likes, median_comments) for p in posts}
+        briefs = {}
+        for p in posts:
+            m_likes = reels_median_likes if p.get("is_video") else static_median_likes
+            m_comments = reels_median_comments if p.get("is_video") else static_median_comments
+            briefs[p["index"]] = generate_local_fallback_brief(p, p["likes"] >= m_likes, m_likes, m_comments)
+        return briefs
         
     # genai.configure(api_key=gemini_key)
     
@@ -452,10 +457,12 @@ def run_batch_post_audits(posts, median_likes, median_comments):
     
     prompt = f"""
     You are auditing the following 15 posts for an Instagram account.
-    Median Account Baseline Likes: {median_likes:,}
-    Median Account Baseline Comments: {median_comments:,}
+    Median Baseline Likes (Reels): {reels_median_likes:,}
+    Median Baseline Likes (Static): {static_median_likes:,}
     
-    For each post, determine if it is an OVERPERFORMING post (Likes >= {median_likes}) or an UNDERPERFORMING post (Likes < {median_likes}).
+    For each post, determine if it is an OVERPERFORMING post or an UNDERPERFORMING post based on its specific type:
+    - If it's a Video (Reel), compare its Likes to {reels_median_likes}.
+    - If it's an Image/Carousel (Static), compare its Likes to {static_median_likes}.
     
     Generate an audit report for EVERY post and return a JSON object where each key is the post's exact "index" (e.g., "Post 1", "Post 2", ..., "Post 15") and the value is its corresponding audit brief in Markdown matching the specified schema.
     

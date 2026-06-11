@@ -837,6 +837,11 @@ function renderMedianMetricsAndBestWorst(data) {
   const medianLikes = Number((data.median_likes ?? calculateMedian(likes)).toFixed(2));
   const medianComments = Number((data.median_comments ?? calculateMedian(comments)).toFixed(2));
   const averageLikes = Number((data.average_likes ?? calculateAverage(likes)).toFixed(2));
+  
+  const reelsMedianLikes = Number((data.reels_median_likes || 0).toFixed(2));
+  const reelsMedianComments = Number((data.reels_median_comments || 0).toFixed(2));
+  const staticMedianLikes = Number((data.static_median_likes || 0).toFixed(2));
+  const staticMedianComments = Number((data.static_median_comments || 0).toFixed(2));
 
   const getDayWithMostPosts = (postsList) => {
     if (!postsList || postsList.length === 0) return 'N/A';
@@ -873,6 +878,15 @@ function renderMedianMetricsAndBestWorst(data) {
     medianLikesEl.dataset.val = medianLikes;
     medianLikesEl.textContent = medianLikes.toLocaleString();
   }
+  
+  const rmlEl = document.getElementById('reels-median-likes');
+  if (rmlEl) { rmlEl.dataset.val = reelsMedianLikes; rmlEl.textContent = reelsMedianLikes.toLocaleString(); }
+  const rmcEl = document.getElementById('reels-median-comments');
+  if (rmcEl) { rmcEl.dataset.val = reelsMedianComments; rmcEl.textContent = reelsMedianComments.toLocaleString(); }
+  const smlEl = document.getElementById('static-median-likes');
+  if (smlEl) { smlEl.dataset.val = staticMedianLikes; smlEl.textContent = staticMedianLikes.toLocaleString(); }
+  const smcEl = document.getElementById('static-median-comments');
+  if (smcEl) { smcEl.dataset.val = staticMedianComments; smcEl.textContent = staticMedianComments.toLocaleString(); }
   const medianCommentsEl = document.getElementById('median-comments-value');
   if (medianCommentsEl) {
     medianCommentsEl.dataset.val = medianComments;

@@ -314,29 +314,45 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 curr += timedelta(days=1)
 
         df = pd.DataFrame(parsed_posts)
+        
+        reels_df = df[df["is_video"] == True]
+        static_df = df[df["is_video"] == False]
+        
+        reels_median_likes = float(reels_df["likes"].median()) if not reels_df.empty else 0
+        reels_median_comments = float(reels_df["comments"].median()) if not reels_df.empty else 0
+        static_median_likes = float(static_df["likes"].median()) if not static_df.empty else 0
+        static_median_comments = float(static_df["comments"].median()) if not static_df.empty else 0
+        
+        # Keep overall means/medians if needed elsewhere
         median_likes = float(df["likes"].median())
         median_comments = float(df["comments"].median())
         average_likes = float(df["likes"].mean())
         average_comments = float(df["comments"].mean())
 
         try:
-            batch_briefs = run_batch_post_audits(parsed_posts, median_likes, median_comments)
+            batch_briefs = run_batch_post_audits(parsed_posts, reels_median_likes, reels_median_comments, static_median_likes, static_median_comments)
         except Exception as batch_err:
             print(f"DEBUG: Batch auditing failed: {batch_err}")
             batch_briefs = {}
 
         audited_posts = []
         for post in parsed_posts:
-            is_above = post["likes"] >= median_likes
+            if post.get("is_video"):
+                is_above = post["likes"] >= reels_median_likes
+            else:
+                is_above = post["likes"] >= static_median_likes
+            
             brief = batch_briefs.get(post["index"])
             
             if not brief:
                 try:
+                    p_med_likes = reels_median_likes if post.get("is_video") else static_median_likes
+                    p_med_comments = reels_median_comments if post.get("is_video") else static_median_comments
                     brief = run_single_post_audit(
                         post_data=post,
                         is_above_baseline=is_above,
-                        median_likes=median_likes,
-                        median_comments=median_comments
+                        median_likes=p_med_likes,
+                        median_comments=p_med_comments
                     )
                 except Exception as audit_err:
                     brief = f"Audit failed: {str(audit_err)}"
@@ -718,9 +734,13 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
         response_payload = {
             "client_metrics": {
                 "profile_url": profile_url,
-                "median_likes": median_likes,
-                "median_comments": median_comments,
-                "average_likes": average_likes,
+            "reels_median_likes": reels_median_likes,
+            "reels_median_comments": reels_median_comments,
+            "static_median_likes": static_median_likes,
+            "static_median_comments": static_median_comments,
+            "median_likes": median_likes,
+            "median_comments": median_comments,
+            "average_likes": average_likes,
                 "average_comments": average_comments,
                 "posts": sorted_posts,
                 "hashtags_analysis": {

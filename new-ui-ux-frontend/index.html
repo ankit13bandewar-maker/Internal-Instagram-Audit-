@@ -227,6 +227,58 @@
           </div>
         </div>
 
+        <!-- ── Format Medians ── -->
+        <div class="grid g4">
+          <div class="card statline" style="border-left: 3px solid var(--accent)">
+            <div class="v"><span class="cu" id="reels-median-likes" data-val="0">0</span></div>
+            <div class="k">Reels Median Likes</div>
+            <div class="d">Typical engagement for videos.</div>
+          </div>
+          <div class="card statline" style="border-left: 3px solid var(--accent)">
+            <div class="v"><span class="cu" id="reels-median-comments" data-val="0">0</span></div>
+            <div class="k">Reels Median Comments</div>
+            <div class="d">Typical conversations on videos.</div>
+          </div>
+          <div class="card statline" style="border-left: 3px solid var(--accent-sec)">
+            <div class="v"><span class="cu" id="static-median-likes" data-val="0">0</span></div>
+            <div class="k">Static Median Likes</div>
+            <div class="d">Typical engagement for images.</div>
+          </div>
+          <div class="card statline" style="border-left: 3px solid var(--accent-sec)">
+            <div class="v"><span class="cu" id="static-median-comments" data-val="0">0</span></div>
+            <div class="k">Static Median Comments</div>
+            <div class="d">Typical conversations on images.</div>
+          </div>
+        </div>
+
+        <!-- ── Section: posts ── -->
+        <div class="sec-head">
+          <span class="n"><span class="ic">◳</span> A Closer Look at Their Posts</span>
+          <span class="line"></span>
+          <p>Which posts did well, and why</p>
+        </div>
+
+        <!-- Feed + Diagnostic -->
+        <div class="grid g2">
+
+          <!-- Feed list -->
+          <div class="card" id="feed-card">
+            <div class="card-h">
+              <div class="t"><span class="ico">▤</span> Their Posts, Best to Worst</div>
+              <span class="pill" style="font-size:9px">By Likes</span>
+            </div>
+            <div class="feed" id="feed">
+              <!-- Dynamically loaded post feed items -->
+            </div>
+          </div>
+
+          <!-- Diagnostic Viewer -->
+          <div class="card" id="post-deep-dive-viewer">
+            <!-- Dynamically loaded details/empty selected states -->
+          </div>
+
+        </div>
+
         <!-- ── Benchmark + Growth ── -->
         <div class="grid g2">
 
@@ -400,34 +452,6 @@
             </div>
             <div class="lr-stat" id="best-static-stats">0 likes · 0 comments</div>
           </div>
-        </div>
-
-        <!-- ── Section: posts ── -->
-        <div class="sec-head">
-          <span class="n"><span class="ic">◳</span> A Closer Look at Their Posts</span>
-          <span class="line"></span>
-          <p>Which posts did well, and why</p>
-        </div>
-
-        <!-- Feed + Diagnostic -->
-        <div class="grid g2">
-
-          <!-- Feed list -->
-          <div class="card" id="feed-card">
-            <div class="card-h">
-              <div class="t"><span class="ico">▤</span> Their Posts, Best to Worst</div>
-              <span class="pill" style="font-size:9px">By Likes</span>
-            </div>
-            <div class="feed" id="feed">
-              <!-- Dynamically loaded post feed items -->
-            </div>
-          </div>
-
-          <!-- Diagnostic Viewer -->
-          <div class="card" id="post-deep-dive-viewer">
-            <!-- Dynamically loaded details/empty selected states -->
-          </div>
-
         </div>
 
         <!-- ── Section: hashtags ── -->
