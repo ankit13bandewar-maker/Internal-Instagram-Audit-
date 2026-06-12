@@ -728,7 +728,7 @@ def calculate_metrics_package(posts: list, follower_count: int) -> dict:
 
     # METRIC 3: POSTING FREQUENCY
     from datetime import datetime
-    timestamps = [p.get("timestamp") or p.get("date") for p in posts if p.get("timestamp") or p.get("date")]
+    timestamps = [p.get("timestamp") or p.get("date") for p in posts if (p.get("timestamp") or p.get("date")) and not p.get("is_mock")]
     posts_per_week = 0
     days_per_post = 0
     day_with_most_posts = "N/A"
@@ -795,11 +795,13 @@ def calculate_metrics_package(posts: list, follower_count: int) -> dict:
         "best_post": {
             "likes": best_post.get("likes_count", best_post.get("likes", 0)), 
             "comments": best_post.get("comments_count", best_post.get("comments", 0)), 
-            "url": best_post.get("url", best_post.get("post_url", ""))
+            "url": best_post.get("url", best_post.get("post_url", "")),
+            "display_url": best_post.get("display_url", best_post.get("displayUrl", ""))
         },
         "worst_post": {
             "likes": worst_post.get("likes_count", worst_post.get("likes", 0)), 
             "comments": worst_post.get("comments_count", worst_post.get("comments", 0)), 
-            "url": worst_post.get("url", worst_post.get("post_url", ""))
+            "url": worst_post.get("url", worst_post.get("post_url", "")),
+            "display_url": worst_post.get("display_url", worst_post.get("displayUrl", ""))
         }
     }

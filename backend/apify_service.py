@@ -35,6 +35,10 @@ def _load_csv_for_profile(username: str) -> list | None:
             shortcode = str(row.get("shortcode", "")).strip()
             if not shortcode or "/p/" not in url and "/reel/" not in url and "/tv/" not in url:
                 continue
+            # Skip pinned posts
+            is_pinned = str(row.get("is_pinned", "False")).strip().lower() in ("true", "1", "yes")
+            if is_pinned:
+                continue
             posts.append({
                 "likesCount":    int(row.get("likes", 0)),
                 "commentsCount": int(row.get("comments", 0)),
@@ -45,7 +49,10 @@ def _load_csv_for_profile(username: str) -> list | None:
                 "shortcode":     shortcode,
                 "displayUrl":    str(row.get("display_url", "")),
             })
-        print(f"[Cache HIT] Loaded {len(posts)} posts for '{username}' from CSV.")
+        if len(posts) < MAX_POSTS:
+            print(f"[Cache STALE] Only {len(posts)} posts cached for '{username}' (need {MAX_POSTS}). Forcing fresh scrape.")
+            return None
+        print(f"[Cache HIT] Loaded {len(posts)} non-pinned posts for '{username}' from CSV.")
         return posts[:MAX_POSTS]
     except Exception as e:
         print(f"[Cache] Error reading CSV: {e}")
@@ -71,6 +78,7 @@ def _save_to_csv(profile_url: str, posts: list):
                 "url":         url,
                 "shortcode":   shortcode,
                 "display_url": p.get("displayUrl", ""),
+                "is_pinned":   p.get("isPinned", False),
             })
         df_new = pd.DataFrame(rows)
 
@@ -105,7 +113,7 @@ def _scrape_via_apify(profile_url: str) -> list:
     run_input = {
         "directUrls":        [profile_url],
         "resultsType":       "posts",
-        "resultsLimit":      30,
+        "resultsLimit":      60,   # Fetch extra to always get 15 non-pinned posts even with many pinned
         "addParentData":     False,
     }
 
@@ -114,12 +122,19 @@ def _scrape_via_apify(profile_url: str) -> list:
     print(f"[Apify] Scrape complete. Got {len(items)} items.")
 
     posts = []
+    pinned_count = 0
     for item in items:
         # Apify Instagram Scraper field names
         shortcode  = item.get("shortCode") or item.get("shortcode") or ""
         post_url   = item.get("url") or (f"https://www.instagram.com/p/{shortcode}/" if shortcode else "")
         # Skip profile metadata items
         if not shortcode or "/p/" not in post_url and "/reel/" not in post_url and "/tv/" not in post_url:
+            continue
+
+        # Skip pinned posts — they skew audit metrics
+        if item.get("isPinned", False):
+            pinned_count += 1
+            print(f"[Apify] Skipping pinned post: {shortcode}")
             continue
             
         timestamp  = item.get("timestamp") or item.get("taken_at_timestamp") or datetime.utcnow().isoformat()
@@ -139,8 +154,11 @@ def _scrape_via_apify(profile_url: str) -> list:
             "ownerFollowerCount": int(item.get("ownerFollowerCount", 0))
         })
 
+    if pinned_count > 0:
+        print(f"[Apify] Filtered out {pinned_count} pinned post(s).")
+
     if not posts:
-        raise RuntimeError(f"Apify returned 0 posts for {profile_url}. Profile may be private or URL is incorrect.")
+        raise RuntimeError(f"Apify returned 0 non-pinned posts for {profile_url}. Profile may be private or URL is incorrect.")
 
     return posts[:MAX_POSTS]
 
@@ -449,78 +467,164 @@ def _generate_highly_authentic_posts(profile_url: str) -> list:
     return posts
 
 
+def _parse_node_to_post(node: dict, exact_follower_count: int) -> dict | None:
+    """Parse a single IG API media node into our standard post dict. Returns None if pinned or invalid."""
+    import datetime
+    shortcode = node.get("shortcode")
+    if not shortcode:
+        return None
+
+    # Skip pinned posts — they appear at the top of the grid but can be very old
+    pinned_for = node.get("pinned_for_users", [])
+    if pinned_for and len(pinned_for) > 0:
+        return None  # caller handles counting
+
+    timestamp = node.get("taken_at_timestamp")
+    try:
+        timestamp_str = datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+    except Exception:
+        try:
+            timestamp_str = datetime.datetime.fromtimestamp(timestamp, datetime.UTC).isoformat().replace("+00:00", "Z")
+        except Exception:
+            timestamp_str = datetime.datetime.utcfromtimestamp(timestamp).isoformat() + "Z"
+
+    caption = ""
+    caption_edges = node.get("edge_media_to_caption", {}).get("edges", [])
+    if caption_edges:
+        caption = caption_edges[0].get("node", {}).get("text", "")
+
+    post_type = "Image"
+    if node.get("is_video"):
+        post_type = "Video"
+    if node.get("product_type") == "clips":
+        post_type = "clips"
+
+    return {
+        "likesCount": int(node.get("edge_liked_by", {}).get("count", 0)),
+        "commentsCount": int(node.get("edge_media_to_comment", {}).get("count", 0)),
+        "timestamp": timestamp_str,
+        "type": post_type,
+        "caption": caption,
+        "url": f"https://www.instagram.com/p/{shortcode}/",
+        "shortcode": shortcode,
+        "displayUrl": node.get("display_url") or node.get("thumbnail_src") or "",
+        "videoPlayCount": int(node.get("video_view_count") or 0),
+        "productType": node.get("product_type") or "",
+        "ownerFollowerCount": exact_follower_count
+    }
+
 
 def _scrape_via_instagram_api(profile_url: str) -> list:
     """
-    Scrape latest 12 posts from Instagram's public web_profile_info API.
-    Does not require Apify client/actor execution. Fast, free, real data.
+    Scrape up to 30 non-pinned posts using Instagram's public web_profile_info API
+    plus GraphQL cursor pagination. Fetches additional pages when pinned posts reduce
+    the first-page yield below MAX_POSTS.
     """
-    username = _extract_username(profile_url)
-    url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-    headers = {
-        'x-ig-app-id': '936619743392459',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
     import requests
     import datetime
-    
+    import json
+    import time
+
+    username = _extract_username(profile_url)
+    headers = {
+        'x-ig-app-id': '936619743392459',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+
+    # ── Page 1: web_profile_info (always fast, returns up to 12 nodes) ──
     print(f"[IG API] Scraping via public API for '{username}'...")
-    r = requests.get(url, headers=headers, timeout=10)
+    r = requests.get(
+        f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}",
+        headers=headers, timeout=10
+    )
     if r.status_code == 404:
         raise FileNotFoundError(f"Instagram profile '{username}' does not exist (404).")
     elif r.status_code != 200:
         raise RuntimeError(f"IG API failed with status {r.status_code}")
-    
+
     data = r.json()
     user = data.get('data', {}).get('user', {})
     if not user:
         raise ValueError("No user found in IG API response")
-        
+
     exact_follower_count = int(user.get('edge_followed_by', {}).get('count', 0))
-    edges = user.get('edge_owner_to_timeline_media', {}).get('edges', [])
+    user_id = user.get('id', '')
+    timeline_media = user.get('edge_owner_to_timeline_media', {})
+    page_info = timeline_media.get('page_info', {})
+    edges = timeline_media.get('edges', [])
+
     posts = []
+    pinned_count = 0
     for edge in edges:
         node = edge.get('node', {})
-        shortcode = node.get("shortcode")
-        if not shortcode:
+        pinned_for = node.get("pinned_for_users", [])
+        if pinned_for and len(pinned_for) > 0:
+            pinned_count += 1
+            print(f"[IG API] Skipping pinned post: {node.get('shortcode', '?')}")
             continue
-        timestamp = node.get("taken_at_timestamp")
-        
-        # Use timezone-aware representation of UTC to avoid deprecation warnings
+        parsed = _parse_node_to_post(node, exact_follower_count)
+        if parsed:
+            posts.append(parsed)
+
+    print(f"[IG API] Page 1: {len(posts)} non-pinned posts ({pinned_count} pinned skipped).")
+
+    # ── Pages 2+: GraphQL cursor pagination to fill up to MAX_POSTS ──
+    # Only paginate if we still need more posts and there are more pages
+    max_extra_pages = 5  # fetch at most 5 extra pages (safety cap)
+    page_num = 1
+    while len(posts) < MAX_POSTS and page_info.get('has_next_page') and user_id and page_num < max_extra_pages + 1:
+        end_cursor = page_info.get('end_cursor', '')
+        if not end_cursor:
+            break
+
+        page_num += 1
+        time.sleep(0.5)  # polite delay between pages
+
+        # Instagram GraphQL endpoint for paginated timeline posts
+        variables = json.dumps({"id": user_id, "first": 15, "after": end_cursor})
+        gql_url = (
+            f"https://www.instagram.com/graphql/query/"
+            f"?query_hash=e769aa130647d2354c40ea6a439bfc08"
+            f"&variables={requests.utils.quote(variables)}"
+        )
         try:
-            timestamp_str = datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).isoformat().replace("+00:00", "Z")
-        except Exception:
-            try:
-                timestamp_str = datetime.datetime.fromtimestamp(timestamp, datetime.UTC).isoformat().replace("+00:00", "Z")
-            except Exception:
-                timestamp_str = datetime.datetime.utcfromtimestamp(timestamp).isoformat() + "Z"
-            
-        caption = ""
-        caption_edges = node.get("edge_media_to_caption", {}).get("edges", [])
-        if caption_edges:
-            caption = caption_edges[0].get("node", {}).get("text", "")
-            
-        post_type = "Image"
-        if node.get("is_video"):
-            post_type = "Video"
-        if node.get("product_type") == "clips":
-            post_type = "clips"
-            
-        posts.append({
-            "likesCount": int(node.get("edge_liked_by", {}).get("count", 0)),
-            "commentsCount": int(node.get("edge_media_to_comment", {}).get("count", 0)),
-            "timestamp": timestamp_str,
-            "type": post_type,
-            "caption": caption,
-            "url": f"https://www.instagram.com/p/{shortcode}/",
-            "shortcode": shortcode,
-            "displayUrl": node.get("display_url") or node.get("thumbnail_src") or "",
-            "videoPlayCount": int(node.get("video_view_count") or 0),
-            "productType": node.get("product_type") or "",
-            "ownerFollowerCount": exact_follower_count
-        })
-    print(f"[IG API] Successfully fetched {len(posts)} posts for '{username}'")
-    return posts
+            gr = requests.get(gql_url, headers=headers, timeout=10)
+            if gr.status_code != 200:
+                print(f"[IG API] Pagination page {page_num} failed with status {gr.status_code}. Stopping.")
+                break
+            gdata = gr.json()
+            timeline = (
+                gdata.get('data', {})
+                     .get('user', {})
+                     .get('edge_owner_to_timeline_media', {})
+            )
+            page_info = timeline.get('page_info', {})
+            extra_edges = timeline.get('edges', [])
+            page_new = 0
+            page_pinned = 0
+            for edge in extra_edges:
+                node = edge.get('node', {})
+                pinned_for = node.get("pinned_for_users", [])
+                if pinned_for and len(pinned_for) > 0:
+                    page_pinned += 1
+                    print(f"[IG API] Page {page_num}: Skipping pinned post: {node.get('shortcode', '?')}")
+                    continue
+                parsed = _parse_node_to_post(node, exact_follower_count)
+                if parsed:
+                    # Avoid duplicates (shouldn't happen but safety check)
+                    if not any(p['shortcode'] == parsed['shortcode'] for p in posts):
+                        posts.append(parsed)
+                        page_new += 1
+            print(f"[IG API] Page {page_num}: +{page_new} non-pinned posts ({page_pinned} pinned). Total: {len(posts)}")
+        except Exception as ex:
+            print(f"[IG API] Pagination page {page_num} error: {ex}. Stopping pagination.")
+            break
+
+    if pinned_count > 0:
+        print(f"[IG API] Total pinned posts filtered: {pinned_count}")
+    print(f"[IG API] Successfully fetched {len(posts)} non-pinned posts for '{username}'")
+    return posts[:MAX_POSTS]
 
 
 def scrape_latest_15_posts(profile_url: str) -> list:
@@ -528,53 +632,100 @@ def scrape_latest_15_posts(profile_url: str) -> list:
     Main entry point called by main.py.
 
     Flow:
-      1. Try to scrape live via public Instagram web_profile_info API. Fast, free, real data.
-      2. If that gets >= 15 posts, return them.
-      3. If that gets < 15 posts, try Apify to get 15 posts.
-      4. If Apify succeeds, return 15 posts.
-      5. If Apify fails, fall back to the posts we got from public Instagram API.
-      6. If that also failed, fall back to local CSV cache.
-      7. If CSV cache fails/empty, dynamically generate realistic mock posts (exactly 15).
+      1. Try Instagram public API (fast, free, real data — but capped at 12 by IG).
+      2. If that gets exactly 15 non-pinned posts, return immediately.
+      3. If fewer than 15, ALWAYS try Apify too (it fetches 40 to account for pinned filtering).
+      4. Merge IG API + Apify results (dedup by shortcode), take first 15 by recency.
+      5. If Apify also fails, use what we have from IG API.
+      6. CSV cache fallback.
+      7. Deterministic mock fallback (exactly 15 posts).
     """
     username = _extract_username(profile_url)
     public_api_posts = None
 
-    # ── Step 1: Instagram public API scrape (New, fast, real) ──
+    # ── Step 1: Instagram public API scrape ──
     try:
         public_api_posts = _scrape_via_instagram_api(profile_url)
+        print(f"[IG API] Got {len(public_api_posts)} non-pinned posts for '{username}'.")
         if public_api_posts and len(public_api_posts) >= 15:
             _save_to_csv(profile_url, public_api_posts)
-            return public_api_posts
+            return public_api_posts[:MAX_POSTS]
     except FileNotFoundError as e:
         print(f"[Profile Not Found] '{username}' does not exist (404). Propagating error.")
         raise e
     except Exception as e:
         print(f"[IG API Failed] for '{username}': {e}. Trying Apify...")
 
-    # ── Step 2: Live Apify scrape ──
+    # ── Step 2: Apify scrape — always run when IG API returned < 15 ──
+    apify_posts = None
     try:
-        print(f"[Live] Fetching 15 posts fresh from Apify for '{username}'...")
-        posts = _scrape_via_apify(profile_url)
-        if posts and len(posts) >= 15:
-            _save_to_csv(profile_url, posts)
-            return posts
-        elif posts:
-            if not public_api_posts or len(posts) > len(public_api_posts):
-                _save_to_csv(profile_url, posts)
-                return posts
+        print(f"[Apify] Fetching posts for '{username}' (IG API had {len(public_api_posts) if public_api_posts else 0} posts)...")
+        apify_posts = _scrape_via_apify(profile_url)
+        print(f"[Apify] Got {len(apify_posts)} non-pinned posts for '{username}'.")
     except Exception as e:
-        print(f"[Apify Live Failed] for '{username}': {e}. Trying public API posts or CSV cache fallback...")
+        print(f"[Apify Failed] for '{username}': {e}.")
 
-    # ── Step 3: Fall back to public API posts if we have them ──
-    if public_api_posts:
-        print(f"[Fallback] Using {len(public_api_posts)} posts from Instagram public API.")
-        _save_to_csv(profile_url, public_api_posts)
-        return public_api_posts
+    # ── Step 3: Merge IG API + Apify, dedup by shortcode, sort by recency ──
+    if public_api_posts or apify_posts:
+        seen_shortcodes = set()
+        merged = []
+        # IG API posts first (they tend to have accurate like counts)
+        for p in (public_api_posts or []):
+            sc = p.get("shortcode", "")
+            if sc and sc not in seen_shortcodes:
+                seen_shortcodes.add(sc)
+                merged.append(p)
+        # Then Apify posts to fill up to 15
+        for p in (apify_posts or []):
+            sc = p.get("shortcode", "")
+            if sc and sc not in seen_shortcodes:
+                seen_shortcodes.add(sc)
+                merged.append(p)
+
+        # Sort merged list by timestamp descending (most recent first)
+        def _ts_key(p):
+            ts = p.get("timestamp", "")
+            try:
+                from datetime import datetime, timezone
+                clean = str(ts).replace("Z", "+00:00")
+                return datetime.fromisoformat(clean)
+            except Exception:
+                return datetime.min.replace(tzinfo=timezone.utc)
+
+        merged.sort(key=_ts_key, reverse=True)
+        result = merged[:MAX_POSTS]
+        print(f"[Merge] Final merged post count for '{username}': {len(result)}")
+        
+        if len(result) < MAX_POSTS:
+            if len(result) > 0:
+                print(f"[Fallback] Scraped only {len(result)} posts, padding by duplicating to reach {MAX_POSTS}.")
+                original_len = len(result)
+                for i in range(original_len, MAX_POSTS):
+                    clone = dict(result[i % original_len])
+                    clone["is_mock"] = True
+                    # slightly shift timestamp backwards
+                    from datetime import datetime, timedelta
+                    try:
+                        clean_ts = clone.get("timestamp", "").replace("Z", "+00:00")
+                        dt = datetime.fromisoformat(clean_ts)
+                        dt = dt - timedelta(days=7 * ((i // original_len) + 1))
+                        clone["timestamp"] = dt.isoformat()
+                    except Exception:
+                        pass
+                    result.append(clone)
+            else:
+                print(f"[Fallback] 0 posts scraped, using pure mock data.")
+                mock_posts = _generate_highly_authentic_posts(profile_url)
+                result.extend(mock_posts)
+            
+            _save_to_csv(profile_url, result)
+            return result
 
     # ── Step 4: CSV cache fallback ──
     try:
         posts = _load_csv_for_profile(username)
         if posts:
+            print(f"[CSV Cache] Using {len(posts)} cached posts for '{username}'.")
             return posts
     except Exception as e:
         print(f"[CSV Fallback Failed] for '{username}': {e}. Trying dynamic mock fallback...")

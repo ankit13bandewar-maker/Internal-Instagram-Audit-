@@ -18,19 +18,12 @@ async function fetchDynamicThumbnail(post, imgElement) {
   
   const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://localhost:8000';
   
-  // If we already have a displayUrl, use it (proxied)
   if (post.display_url && !post.display_url.includes('picsum.photos')) {
     imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}`;
     return;
   }
   
-  // Otherwise try to proxy the actual post page
-  const url = resolvePostUrl(post);
-  if (url && url !== '#') {
-    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(url)}`;
-  } else {
-    imgElement.src = `https://picsum.photos/seed/${post.shortcode || post.index}/100/100`;
-  }
+  imgElement.src = `https://picsum.photos/seed/${post.shortcode || post.index || Math.random()}/100/100`;
 }
 
 let state = {
@@ -123,8 +116,8 @@ async function loadHistory() {
           <div class="acct-meta">
             <div class="h">@${item.username}</div>
             <div class="s" style="display:flex; justify-content:space-between; width:100%; gap:8px;">
-              <span>${followersFormatted} followers</span>
-              <span style="opacity:0.6; font-size:9.5px;">${timeStr}</span>
+              <span style="color:#ffffff; font-size:11.5px; font-weight:600;">${followersFormatted} followers</span>
+              <span style="color:#ffffff; font-size:11.5px; font-weight:600;">${timeStr}</span>
             </div>
           </div>
           <div class="er ${directionClass}">${item.engagement_rate}%</div>
@@ -628,24 +621,20 @@ function renderAllDynamicCharts(rawData) {
     } catch(e) {}
     return d;
   }
-  const trendPts = trendHistory.length >= 2 ? trendHistory.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
-  const trendLabels = trendHistory.length >= 2 ? trendHistory.map(item => fmtTrendDate(item.date)) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const recentTrend = trendHistory.slice(-6);
+  const trendPts = recentTrend.length >= 2 ? recentTrend.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
+  const trendLabels = recentTrend.length >= 2 ? recentTrend.map(item => fmtTrendDate(item.date)) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   drawChart('chart-growth', trendPts, 'var(--accent)', 148, trendLabels);
 
   // Update growth dates axis-x (bottom labels below chart)
   const growthAxis = document.getElementById('growth-axis-x');
-  if (growthAxis && trendHistory.length >= 2) {
+  if (growthAxis && recentTrend.length >= 2) {
     growthAxis.innerHTML = '';
-    const step = Math.max(1, Math.floor(trendHistory.length / 5));
-    for (let i = 0; i < trendHistory.length; i += step) {
+    recentTrend.forEach(item => {
       const span = document.createElement('span');
-      span.textContent = fmtTrendDate(trendHistory[i].date);
+      span.textContent = fmtTrendDate(item.date);
       growthAxis.appendChild(span);
-    }
-    // Always add the last date
-    const lastSpan = document.createElement('span');
-    lastSpan.textContent = fmtTrendDate(trendHistory[trendHistory.length - 1].date);
-    growthAxis.appendChild(lastSpan);
+    });
   }
 
   // --- Chart 2: Reels Views Distribution ---
@@ -805,9 +794,7 @@ function renderNicheBenchmark(data) {
 
   const benchmarkDesc = document.getElementById('benchmark-desc');
   if (benchmarkDesc) {
-    benchmarkDesc.textContent = (benchmark.index_score || 0) >= 100
-      ? "This account's posts get more engagement than most creators of a similar size."
-      : "This account's engagement rate is currently trailing the baseline standard for this tier.";
+    benchmarkDesc.textContent = "Shows how active this audience is compared to other accounts with the same follower count.";
   }
 
   const actualER = data.calculated_metrics?.engagement_rate || data.engagement_rate || 0;

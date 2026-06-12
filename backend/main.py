@@ -711,7 +711,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 "url": p_url,
                 "likes": p_likes,
                 "comments": p_comments,
-                "total_interactions": p_likes + p_comments
+                "total_interactions": p_likes + p_comments,
+                "display_url": p.get("display_url", p.get("displayUrl", ""))
             }
             
             if post_type == "Video" or product_type == "clips":

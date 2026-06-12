@@ -231,19 +231,19 @@
         <div class="sec-head" style="margin-top: 30px;">
           <span class="n"><span class="ic">🎬</span> Reels Analysis</span>
           <span class="line"></span>
-          <p>Performance of Video Content</p>
+          <p>Performance of Reels Content</p>
         </div>
         
         <div class="grid g2" style="margin-bottom: 20px;">
           <div class="card statline" style="border-left: 3px solid var(--accent)">
             <div class="v"><span class="cu" id="reels-median-likes" data-val="0">0</span></div>
             <div class="k">Reels Median Likes</div>
-            <div class="d">Typical engagement for videos.</div>
+            <div class="d">Typical engagement for reels.</div>
           </div>
           <div class="card statline" style="border-left: 3px solid var(--accent)">
             <div class="v"><span class="cu" id="reels-median-comments" data-val="0">0</span></div>
             <div class="k">Reels Median Comments</div>
-            <div class="d">Typical conversations on videos.</div>
+            <div class="d">Typical conversations on reels.</div>
           </div>
         </div>
         
@@ -316,7 +316,7 @@
                 <span id="benchmark-status-badge" class="bench-label">High</span>
                 <span id="benchmark-performance-index" class="bench-index">0% of the typical rate for their size</span>
               </div>
-              <p class="bench-desc" id="benchmark-desc">This account's posts get more engagement than most creators of a similar size.</p>
+              <p class="bench-desc" id="benchmark-desc">Shows how active this audience is compared to other accounts with the same follower count.</p>
             </div>
 
             <div class="bands-wrap">
@@ -344,12 +344,18 @@
             <div class="bench-compare">
               <div class="bc-cell">
                 <div class="bc-k">This account</div>
-                <div class="bc-v" id="benchmark-actual-er" style="color:var(--accent)">0%</div>
+                <div style="display:flex; align-items:baseline; gap:8px;">
+                  <div class="bc-v" id="benchmark-actual-er" style="color:var(--accent)">0%</div>
+                  <div style="font-size:10.5px; color:var(--muted)">Actual rate</div>
+                </div>
               </div>
               <div class="bc-sep">vs</div>
               <div class="bc-cell">
                 <div class="bc-k">Typical for their size</div>
-                <div class="bc-v" id="benchmark-baseline-er">0%</div>
+                <div style="display:flex; align-items:baseline; gap:8px;">
+                  <div class="bc-v" id="benchmark-baseline-er">0%</div>
+                  <div style="font-size:10.5px; color:var(--muted)">Baseline</div>
+                </div>
               </div>
             </div>
           </div>
