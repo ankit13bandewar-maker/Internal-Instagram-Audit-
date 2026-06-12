@@ -1022,6 +1022,13 @@ function renderPostsFeedAndDeepDive(data) {
   const reelsLikes = reelsPosts.map(p => p.likes || 0);
   const staticLikes = staticPosts.map(p => p.likes || 0);
   
+  const calculateMedian = (arr) => {
+    if (!arr || arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  };
+  
   const reelsMedianLikes = Number((data.reels_median_likes ?? calculateMedian(reelsLikes)).toFixed(2));
   const staticMedianLikes = Number((data.static_median_likes ?? calculateMedian(staticLikes)).toFixed(2));
 
