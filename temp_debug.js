@@ -1,4 +1,4 @@
-const BACKEND_URL = "https://instagram-auditor-backend.onrender.com";
+const BACKEND_URL = "https://client-audit-tool.onrender.com";
 const API_URL = "https://client-audit-tool.onrender.com/api/audit";
 // CONFIGURATION Constants
 // const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
