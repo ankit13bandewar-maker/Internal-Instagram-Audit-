@@ -1,5 +1,5 @@
 // CONFIGURATION Constants
-const BACKEND_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+const BACKEND_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://127.0.0.1:8000"
   : "https://client-audit-tool.onrender.com";
 const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
