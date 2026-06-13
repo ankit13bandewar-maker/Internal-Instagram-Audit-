@@ -634,10 +634,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
 
                 metrics = calculate_metrics_package(std_posts, comp_follower_count)
                 
-                # Dynamic fix for mock post URLs: redirect mock post URLs to the competitor's profile page
-                if is_mock:
-                    metrics["best_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
-                    metrics["worst_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
+                # Dynamic fix for mock post URLs removed to allow linking to the actual (or generated) post.
                 
                 return {
                     "competitor_name": f"@{comp_handle}",
@@ -649,8 +646,6 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             except Exception as e:
                 print(f"Competitor packaging failed for {comp_handle}: {e}")
                 metrics = calculate_metrics_package([], 1)
-                metrics["best_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
-                metrics["worst_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
                 return {
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
