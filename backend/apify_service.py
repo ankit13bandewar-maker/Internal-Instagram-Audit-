@@ -27,6 +27,8 @@ def _load_csv_for_profile(username: str) -> list | None:
     try:
         df = pd.read_csv(CSV_PATH).fillna("")
         df_filtered = df[df["profile_url"].str.contains(username, case=False, na=False)]
+        # Prevent UI repeating posts by dropping duplicates imported from padding or bad caches
+        df_filtered = df_filtered.drop_duplicates(subset=["url"])
         if df_filtered.empty:
             return None
         posts = []
@@ -698,21 +700,7 @@ def scrape_latest_15_posts(profile_url: str) -> list:
         
         if len(result) < MAX_POSTS:
             if len(result) > 0:
-                print(f"[Fallback] Scraped only {len(result)} posts, padding by duplicating to reach {MAX_POSTS}.")
-                original_len = len(result)
-                for i in range(original_len, MAX_POSTS):
-                    clone = dict(result[i % original_len])
-                    clone["is_mock"] = True
-                    # slightly shift timestamp backwards
-                    from datetime import datetime, timedelta
-                    try:
-                        clean_ts = clone.get("timestamp", "").replace("Z", "+00:00")
-                        dt = datetime.fromisoformat(clean_ts)
-                        dt = dt - timedelta(days=7 * ((i // original_len) + 1))
-                        clone["timestamp"] = dt.isoformat()
-                    except Exception:
-                        pass
-                    result.append(clone)
+                print(f"[Fallback] Scraped only {len(result)} posts, returning without padding duplicates.")
             else:
                 print(f"[Fallback] 0 posts scraped, using pure mock data.")
                 mock_posts = _generate_highly_authentic_posts(profile_url)
