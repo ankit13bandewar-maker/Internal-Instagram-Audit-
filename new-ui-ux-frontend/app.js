@@ -1,6 +1,6 @@
 // CONFIGURATION Constants
 const BACKEND_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-  ? "http://localhost:8000"
+  ? "http://127.0.0.1:8000"
   : "https://client-audit-tool.onrender.com";
 const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
 
@@ -17,7 +17,7 @@ function resolvePostUrl(post) {
 async function fetchDynamicThumbnail(post, imgElement) {
   if (!post || !imgElement) return;
   
-  const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://localhost:8000';
+  const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://127.0.0.1:8000';
   
   if (post.display_url && !post.display_url.includes('picsum.photos')) {
     imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}`;

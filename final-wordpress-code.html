@@ -2369,7 +2369,7 @@ function resolvePostUrl(post) {
 async function fetchDynamicThumbnail(post, imgElement) {
   if (!post || !imgElement) return;
   
-  const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://localhost:8000';
+  const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://127.0.0.1:8000';
   
   if (post.display_url && !post.display_url.includes('picsum.photos')) {
     imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}`;
