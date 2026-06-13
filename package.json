@@ -5,6 +5,6 @@
   "scripts": {
     "api": "uvicorn main:app --reload --port 8000 --host 0.0.0.0 --app-dir backend",
     "frontend": "python new-ui-ux-frontend/server.py",
-    "dev": "Start-Process powershell -ArgumentList '-NoExit','-Command','cd \"%cd%\"; .\\venv\\Scripts\\Activate.ps1; uvicorn main:app --reload --port 8000 --host 0.0.0.0 --app-dir backend' && Start-Process powershell -ArgumentList '-NoExit','-Command','python \"%cd%\\new-ui-ux-frontend\\server.py\"'"
+    "dev": "start \"Backend\" cmd /k \".\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8000 --host 0.0.0.0 --app-dir backend\" && start \"Frontend\" cmd /k \".\\venv\\Scripts\\python.exe new-ui-ux-frontend\\server.py\""
   }
 }

@@ -1,4 +1,10 @@
-<!-- INSTAGRAM AUDIT DASHBOARD - WORDPRESS/ELEMENTOR READY PAYLOAD -->
+<!-- 
+  ==============================================================
+  INSTAGRAM AUDIT DASHBOARD - WORDPRESS/ELEMENTOR READY PAYLOAD
+  ==============================================================
+-->
+
+<div class="audit-dashboard-root-wrapper">
 
 
 <div class="app">
@@ -585,6 +591,8 @@
 
 
 
+</div>
+
 <!-- STYLES -->
 <style>
 /* ============================================================
@@ -668,8 +676,8 @@
 
 /* ── Reset & base ───────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
+html, .audit-dashboard-root-wrapper { margin: 0; padding: 0; }
+.audit-dashboard-root-wrapper {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-b);
@@ -1500,7 +1508,7 @@ button { cursor: pointer; font-family: inherit; }
   place-items: center;
   color: var(--faint);
 }
-.feed-body { flex: 1; min-width: 0; }
+.feed-.audit-dashboard-root-wrapper { flex: 1; min-width: 0; }
 .feed-body .ttl {
   font-weight: 600;
   font-size: 13px;
@@ -2336,8 +2344,15 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 </style>
-<!-- LOGIC -->
+
+<!-- CDN DEPENDENCIES -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- APPLICATION LOGIC -->
 <script>
+const BACKEND_URL = "https://client-audit-tool.onrender.com";
+const API_URL = "https://client-audit-tool.onrender.com/api/audit";
 // CONFIGURATION Constants
 const BACKEND_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
   ? "http://localhost:8000"
@@ -2770,6 +2785,7 @@ function displayDashboard(rawData) {
   
   if (postsList.length > 1) {
     const dates = postsList
+      .filter(p => !p.is_mock)
       .map(p => new Date(p.timestamp || p.date))
       .filter(d => !isNaN(d.getTime()))
       .sort((a, b) => b - a); // descending

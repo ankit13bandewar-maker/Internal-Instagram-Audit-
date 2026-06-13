@@ -430,6 +430,7 @@ function displayDashboard(rawData) {
   
   if (postsList.length > 1) {
     const dates = postsList
+      .filter(p => !p.is_mock)
       .map(p => new Date(p.timestamp || p.date))
       .filter(d => !isNaN(d.getTime()))
       .sort((a, b) => b - a); // descending

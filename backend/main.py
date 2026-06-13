@@ -597,10 +597,13 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                 is_mock = True
 
             if is_invalid:
+                inv_metrics = calculate_metrics_package([], 1)
+                inv_metrics["best_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
+                inv_metrics["worst_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
                 return {
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
-                    "metrics": calculate_metrics_package([], 1),
+                    "metrics": inv_metrics,
                     "follower_count": 0,
                     "is_mock": True,
                     "is_invalid": True
@@ -609,11 +612,14 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             try:
                 std_posts = []
                 for p in comp_posts:
+                    p_url = p.get("url")
+                    if not p_url:
+                        p_url = f"https://www.instagram.com/{comp_handle}/"
                     std_posts.append({
                         "likes_count": p.get("likesCount", p.get("likes", 0)),
                         "comments_count": p.get("commentsCount", p.get("comments", 0)),
                         "timestamp": p.get("timestamp"),
-                        "url": p.get("url")
+                        "url": p_url
                     })
                     
                 import hashlib
@@ -634,8 +640,6 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
 
                 metrics = calculate_metrics_package(std_posts, comp_follower_count)
                 
-                # Dynamic fix for mock post URLs removed to allow linking to the actual (or generated) post.
-                
                 return {
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
@@ -646,6 +650,10 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             except Exception as e:
                 print(f"Competitor packaging failed for {comp_handle}: {e}")
                 metrics = calculate_metrics_package([], 1)
+                metrics["best_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
+                metrics["worst_post"]["url"] = f"https://www.instagram.com/{comp_handle}/"
+                metrics["best_post"]["is_mock"] = True
+                metrics["worst_post"]["is_mock"] = True
                 return {
                     "competitor_name": f"@{comp_handle}",
                     "rank": rank,
@@ -654,10 +662,13 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
                     "is_mock": True
                 }
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(fetch_competitor, c_handle, idx+1) for idx, c_handle in enumerate(competitor_handles)]
-            for future in concurrent.futures.as_completed(futures):
-                competitor_metrics_list.append(future.result())
+        import time
+        for idx, c_handle in enumerate(competitor_handles):
+            if idx > 0:
+                print(f"DEBUG: Sequential scraping delay (4s) before fetching {c_handle}...")
+                time.sleep(4)
+            result = fetch_competitor(c_handle, idx+1)
+            competitor_metrics_list.append(result)
                 
         # Filter and prioritize real competitors
         real_comps = [c for c in competitor_metrics_list if not c.get("is_mock") and not c.get("is_invalid")]
@@ -672,12 +683,12 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             needed = 5 - len(competitor_metrics_list)
             extra_handles = [h for h in fallback_pool if h.lower() not in existing_names][:needed]
             
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(extra_handles) or 1) as executor:
-                extra_futures = [executor.submit(fetch_competitor, h, len(competitor_metrics_list) + idx + 1) for idx, h in enumerate(extra_handles)]
-                for future in concurrent.futures.as_completed(extra_futures):
-                    res = future.result()
-                    if not res.get("is_invalid"):
-                        competitor_metrics_list.append(res)
+            for idx, h in enumerate(extra_handles):
+                print(f"DEBUG: Sequential scraping delay (4s) before fetching fallback competitor {h}...")
+                time.sleep(4)
+                res = fetch_competitor(h, len(competitor_metrics_list) + idx + 1)
+                if not res.get("is_invalid"):
+                    competitor_metrics_list.append(res)
                         
         # Sort with real ones first, maintaining order
         competitor_metrics_list = sorted(competitor_metrics_list, key=lambda x: (x.get("is_mock", False), x["rank"]))
