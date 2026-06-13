@@ -33,8 +33,8 @@ def main():
         js_content = f.read()
         
     # Update API URL as requested (handle both BACKEND_URL and API_URL variations)
-    js_content = re.sub(r'const\s+BACKEND_URL\s*=\s*.*?;\n?', '', js_content)
-    js_content = re.sub(r'const\s+API_URL\s*=\s*.*?;\n?', '', js_content)
+    js_content = re.sub(r'const\s+BACKEND_URL\s*=\s*.*?;[ \t]*\n?', '', js_content, flags=re.DOTALL)
+    js_content = re.sub(r'const\s+API_URL\s*=\s*.*?;[ \t]*\n?', '', js_content, flags=re.DOTALL)
     # Add it at the top
     js_content = 'const BACKEND_URL = "https://client-audit-tool.onrender.com";\n' + \
                  'const API_URL = "https://client-audit-tool.onrender.com/api/audit";\n' + \
