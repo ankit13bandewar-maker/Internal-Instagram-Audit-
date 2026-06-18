@@ -629,6 +629,74 @@ def _scrape_via_instagram_api(profile_url: str) -> list:
     return posts[:MAX_POSTS]
 
 
+def _scrape_via_rapidapi(profile_url: str) -> list:
+    """Fallback 2: Fetch using RapidAPI Instagram Scraper Stable API."""
+    import requests
+    username = _extract_username(profile_url)
+    rapid_key = os.getenv("RAPIDAPI_KEY", "")
+    rapid_host = os.getenv("RAPIDAPI_HOST", "instagram-scraper-stable-api.p.rapidapi.com")
+    
+    if not rapid_key:
+        print("[RapidAPI] Missing RAPIDAPI_KEY in .env")
+        return []
+
+    print(f"[RapidAPI] Fetching posts for '{username}'...")
+    url = f"https://{rapid_host}/api/v1/users/{username}/posts"
+    headers = {
+        "x-rapidapi-key": rapid_key,
+        "x-rapidapi-host": rapid_host
+    }
+    
+    try:
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code != 200:
+            print(f"[RapidAPI] Failed with status {r.status_code}: {r.text[:100]}")
+            return []
+        
+        data = r.json()
+        posts = []
+        items = data.get("data", []) if isinstance(data.get("data"), list) else data.get("items", [])
+        if not items and isinstance(data, list):
+            items = data
+            
+        for item in items:
+            shortcode = item.get("shortcode") or item.get("short_code") or ""
+            if not shortcode:
+                continue
+            
+            post_type = "Image"
+            if item.get("is_video"): post_type = "Video"
+            if item.get("product_type") == "clips": post_type = "clips"
+            
+            caption_val = item.get("caption", "")
+            if isinstance(caption_val, dict):
+                caption_val = caption_val.get("text", "")
+            
+            posts.append({
+                "likesCount": int(item.get("likes") or item.get("like_count") or item.get("edge_media_preview_like", {}).get("count") or 0),
+                "commentsCount": int(item.get("comments") or item.get("comment_count") or item.get("edge_media_to_comment", {}).get("count") or 0),
+                "timestamp": str(item.get("timestamp") or item.get("taken_at") or ""),
+                "type": post_type,
+                "caption": str(caption_val),
+                "url": f"https://www.instagram.com/p/{shortcode}/",
+                "shortcode": shortcode,
+                "displayUrl": item.get("display_url") or item.get("thumbnail_url") or "",
+                "videoPlayCount": int(item.get("video_view_count") or item.get("play_count") or 0),
+                "productType": item.get("product_type") or "",
+                "ownerFollowerCount": 0
+            })
+            
+            if len(posts) >= MAX_POSTS:
+                break
+        
+        print(f"[RapidAPI] Successfully scraped {len(posts)} posts for '{username}'.")
+        return posts
+    except Exception as e:
+        print(f"[RapidAPI] Error fetching for '{username}': {e}")
+        return []
+
+
+
 def scrape_latest_15_posts(profile_url: str) -> list:
     """
     Main entry point called by main.py.
@@ -638,7 +706,7 @@ def scrape_latest_15_posts(profile_url: str) -> list:
       2. If that gets exactly 15 non-pinned posts, return immediately.
       3. If fewer than 15, ALWAYS try Apify too (it fetches 40 to account for pinned filtering).
       4. Merge IG API + Apify results (dedup by shortcode), take first 15 by recency.
-      5. If Apify also fails, use what we have from IG API.
+      5. If Apify also fails, try RapidAPI fallback.
       6. CSV cache fallback.
       7. Deterministic mock fallback (exactly 15 posts).
     """
@@ -698,6 +766,20 @@ def scrape_latest_15_posts(profile_url: str) -> list:
         result = merged[:MAX_POSTS]
         print(f"[Merge] Final merged post count for '{username}': {len(result)}")
         
+        # ── Step 3.5: RapidAPI Fallback ──
+        if len(result) < MAX_POSTS:
+            print(f"[Fallback] Only {len(result)} posts found. Trying RapidAPI fallback...")
+            rapid_posts = _scrape_via_rapidapi(profile_url)
+            if rapid_posts:
+                for p in rapid_posts:
+                    sc = p.get("shortcode", "")
+                    if sc and sc not in seen_shortcodes:
+                        seen_shortcodes.add(sc)
+                        result.append(p)
+                result.sort(key=_ts_key, reverse=True)
+                result = result[:MAX_POSTS]
+                print(f"[Merge] Merged RapidAPI posts. Final count: {len(result)}")
+
         if len(result) < MAX_POSTS:
             if len(result) > 0:
                 print(f"[Fallback] Scraped only {len(result)} posts, returning without padding duplicates.")
@@ -705,9 +787,9 @@ def scrape_latest_15_posts(profile_url: str) -> list:
                 print(f"[Fallback] 0 posts scraped, using pure mock data.")
                 mock_posts = _generate_highly_authentic_posts(profile_url)
                 result.extend(mock_posts)
-            
-            _save_to_csv(profile_url, result)
-            return result
+        
+        _save_to_csv(profile_url, result)
+        return result
 
     # ── Step 4: CSV cache fallback ──
     try:

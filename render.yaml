@@ -16,4 +16,8 @@ services:
         sync: false
       - key: SUPABASE_KEY
         sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: RAPIDAPI_HOST
+        value: instagram-scraper-stable-api.p.rapidapi.com
 
