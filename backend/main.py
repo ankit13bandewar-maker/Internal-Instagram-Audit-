@@ -815,15 +815,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
         existing_profile = history_db.get(handle, {})
         trend_history = existing_profile.get("trend_history", [])
         
-        if len(trend_history) < 2:
-            # Backfill 5 days of history for spectacular instant visual timeline rendering
+        if len(trend_history) == 0:
             trend_history = []
-            for days_back in range(5, 0, -1):
-                past_date = (datetime.utcnow() - timedelta(days=days_back)).strftime("%Y-%m-%d")
-                # Add a natural slight variation relative to today's follower count
-                variation = 1.0 - (days_back * 0.001) + (int(hashlib.md5(past_date.encode()).hexdigest(), 16) % 100) / 100000.0
-                past_followers = int(client_follower_count * variation)
-                trend_history.append({"date": past_date, "follower_count": past_followers})
         
         # Check if today's date already exists
         has_today = any(entry.get("date") == today_str for entry in trend_history)
@@ -991,38 +984,6 @@ def get_history_snapshot(username: str):
             client_metrics["reels_views_distribution"] = fill_distribution_gaps(client_metrics["reels_views_distribution"], audit_year)
         if "reach_distribution_data" in client_metrics:
             client_metrics["reach_distribution_data"] = fill_distribution_gaps(client_metrics["reach_distribution_data"], audit_year)
-
-    # On-the-fly backfill if history data is insufficient to plot the growth curve realistically
-    trend_history = payload.get("trend_history", [])
-    if len(trend_history) < 25:
-        import hashlib
-        import math
-        
-        client_metrics = payload.get("client_metrics", {})
-        client_follower_count = client_metrics.get("follower_count", 1000)
-        
-        today_str = datetime.utcnow().strftime("%Y-%m-%d")
-        trend_history = []
-        for days_back in range(30, 0, -1):
-            past_date = (datetime.utcnow() - timedelta(days=days_back)).strftime("%Y-%m-%d")
-            base_variation = 1.0 - (days_back * 0.003)
-            # Add sine wave and hash noise for realistic micro-fluctuations
-            noise = (math.sin(days_back * 0.5) * 0.008) + ((int(hashlib.md5(past_date.encode()).hexdigest(), 16) % 100) / 40000.0)
-            variation = base_variation + noise
-            if variation > 1.0 and days_back > 3: variation = 1.0 - abs(noise)
-            
-            past_followers = int(client_follower_count * variation)
-            trend_history.append({"date": past_date, "follower_count": past_followers})
-            
-        trend_history.append({"date": today_str, "follower_count": client_follower_count})
-        payload["trend_history"] = trend_history
-        
-        history_db[username_lower] = payload
-        try:
-            with open(HISTORY_DB_PATH, "w") as f:
-                json.dump(history_db, f)
-        except Exception as e:
-            print(f"Failed to write history DB during snapshot backfill: {e}")
             
     return payload
 
