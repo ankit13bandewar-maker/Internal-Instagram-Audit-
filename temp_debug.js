@@ -13,6 +13,19 @@ function resolvePostUrl(post) {
   return 'https://www.instagram.com/p/' + url + '/';
 }
 
+function fmtTrendDate(d) {
+  // Convert YYYY-MM-DD to DD/MM/YYYY format
+  if (!d) return "Default 15 posts audit";
+  try {
+    const parts = d.split('-');
+    if (parts.length === 3) {
+      const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+  } catch(e) {}
+  return d;
+}
+
 async function fetchDynamicThumbnail(post, imgElement) {
   if (!post || !imgElement) return;
   
@@ -609,18 +622,7 @@ function renderAllDynamicCharts(rawData) {
   const reachDistribution = rawData.reach_distribution_data || data.reach_distribution_data || [];
 
   // --- Chart 1: Audience Growth Timeline ---
-  function fmtTrendDate(d) {
-    // Convert YYYY-MM-DD to "May 12" format
-    if (!d) return d;
-    try {
-      const parts = d.split('-');
-      if (parts.length === 3) {
-        const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      }
-    } catch(e) {}
-    return d;
-  }
+
   const recentTrend = trendHistory.slice(-6);
   const trendPts = recentTrend.length >= 2 ? recentTrend.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
   const trendLabels = recentTrend.length >= 2 ? recentTrend.map(item => fmtTrendDate(item.date)) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -1077,7 +1079,7 @@ function _renderFeedList(feedId, viewerId, posts, medianLikes, stateKey) {
             ${isWin 
               ? '<span style="color:var(--accent);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(198,255,58,0.1);">WIN</span>' 
               : '<span style="color:var(--neg);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(255,99,99,0.1);">FIX</span>'}
-            <span style="color:var(--faint);font-weight:500;font-size:11px;margin-left:4px;">· ${post.date || '—'}</span>
+            <span style="color:var(--faint);font-weight:500;font-size:11px;margin-left:4px;">· ${fmtTrendDate(post.date)}</span>
           </div>
           <div class="cap">${cleanSnippet}</div>
         </div>
@@ -1145,7 +1147,7 @@ function renderPostDeepDive(post, viewerId = 'post-deep-dive-viewer') {
       <div class="diag-head">
         <div>
           <div class="diag-title">${post.index}</div>
-          <div class="diag-meta">Posted on ${post.date || '—'} · ${post.type || 'Photo'}</div>
+          <div class="diag-meta">Posted on ${fmtTrendDate(post.date)} · ${post.type || 'Photo'}</div>
         </div>
         <span class="pill dot ${post.is_above_baseline ? 'win' : 'fix'}">${post.is_above_baseline ? 'Above Baseline' : 'Below Baseline'}</span>
       </div>

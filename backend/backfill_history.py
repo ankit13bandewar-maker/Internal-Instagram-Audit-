@@ -19,7 +19,10 @@ def fill_distribution_gaps(items, audit_year=2026):
             # clean formatting
             clean_date_str = date_str.strip().replace("Wk of ", "")
             # parse date with given year to avoid deprecation warnings/ambiguity
-            dt = datetime.strptime(f"{clean_date_str} {audit_year}", "%b %d %Y").date()
+            try:
+                dt = datetime.strptime(clean_date_str, "%d/%m/%Y").date()
+            except ValueError:
+                dt = datetime.strptime(f"{clean_date_str} {audit_year}", "%b %d %Y").date()
             parsed_items.append((dt, views))
         except Exception as e:
             try:
@@ -35,7 +38,7 @@ def fill_distribution_gaps(items, audit_year=2026):
     filled = []
     for dt, views in parsed_items:
         filled.append({
-            "date": dt.strftime("%b %d"),
+            "date": dt.strftime("%d/%m/%Y"),
             "views": views
         })
         

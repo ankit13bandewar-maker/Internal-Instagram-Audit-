@@ -1632,7 +1632,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .comp-stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 .comp-stat-box {

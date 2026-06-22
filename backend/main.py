@@ -62,31 +62,72 @@ def health_check():
 from fastapi.responses import Response
 
 @app.get("/api/proxy-image")
-def proxy_image(url: str):
-    import requests, re
+def proxy_image(url: str, post_url: str = None):
+    import requests, re, os, hashlib
+    from fastapi.responses import RedirectResponse
+    
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
     }
+
+    # 1. Check local cache first
     try:
-        target_url = url
-        # If it's a post URL, extract the og:image CDN url
-        if "instagram.com/p/" in url or "instagram.com/reel/" in url or "instagram.com/tv/" in url:
-            r = requests.get(url, headers=headers, timeout=5)
+        cache_dir = os.path.join(base_dir, "data_cache", "images")
+        os.makedirs(cache_dir, exist_ok=True)
+        
+        # Use shortcode from post_url if available, else hash the url
+        cache_key = None
+        if post_url:
+            m = re.search(r'/(?:p|reel|tv)/([^/?]+)', post_url)
+            if m:
+                cache_key = m.group(1)
+        if not cache_key:
+            cache_key = hashlib.md5(url.split('?')[0].encode()).hexdigest()
+            
+        cache_path = os.path.join(cache_dir, f"{cache_key}.jpg")
+        
+        if os.path.exists(cache_path):
+            with open(cache_path, "rb") as f:
+                return Response(content=f.read(), media_type="image/jpeg")
+    except Exception as e:
+        print(f"DEBUG: Cache read error: {e}")
+        cache_path = None
+
+    try:
+        # 2. Try the provided CDN url directly
+        img_resp = requests.get(url, headers=headers, timeout=5)
+        if img_resp.status_code == 200:
+            if cache_path:
+                try:
+                    with open(cache_path, "wb") as f:
+                        f.write(img_resp.content)
+                except Exception:
+                    pass
+            return Response(content=img_resp.content, media_type=img_resp.headers.get("Content-Type", "image/jpeg"))
+        
+        # 3. If it failed (likely URL signature expired) and we have a post_url, fetch a fresh og:image
+        fallback_url = post_url or url
+        if "instagram.com/p/" in fallback_url or "instagram.com/reel/" in fallback_url or "instagram.com/tv/" in fallback_url:
+            r = requests.get(fallback_url, headers=headers, timeout=5)
             m = re.search(r'<meta property="og:image"\s+content="([^"]+)"', r.text)
             if m:
                 target_url = m.group(1).replace('&amp;', '&')
-            else:
-                return Response(status_code=404)
-        
-        # Fetch the actual bytes from the CDN
-        img_resp = requests.get(target_url, headers=headers, timeout=5)
-        if img_resp.status_code == 200:
-            return Response(content=img_resp.content, media_type=img_resp.headers.get("Content-Type", "image/jpeg"))
+                img_resp2 = requests.get(target_url, headers=headers, timeout=5)
+                if img_resp2.status_code == 200:
+                    if cache_path:
+                        try:
+                            with open(cache_path, "wb") as f:
+                                f.write(img_resp2.content)
+                        except Exception:
+                            pass
+                    return Response(content=img_resp2.content, media_type=img_resp2.headers.get("Content-Type", "image/jpeg"))
     except Exception:
         pass
     
-    return Response(status_code=404)
+    # 4. Fallback to a placeholder instead of breaking the layout
+    seed = cache_key if 'cache_key' in locals() and cache_key else "fallback"
+    return RedirectResponse(url=f"https://picsum.photos/seed/{seed}/400/400")
 
 def get_real_follower_count(handle: str, fallback_calc: int) -> int:
     import requests, re, time
@@ -167,12 +208,12 @@ def get_real_follower_count(handle: str, fallback_calc: int) -> int:
     return fallback_calc
 
 
-def run_live_apify_competitor_audit(job_id: str, profile_url: str):
+def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: str = None, date_to: str = None):
     try:
         # Extract clean handle
         handle = profile_url.strip().rstrip("/").split("/")[-1].split("?")[0].lower()
         
-        raw_posts = scrape_latest_15_posts(profile_url)
+        raw_posts = scrape_latest_15_posts(profile_url, date_from, date_to)
         if not raw_posts:
             audit_jobs[job_id] = {"status": "error", "error": "No posts returned for the target profile."}
             return
@@ -259,21 +300,12 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             curr = min_date
             if (max_date - curr).days < 30:
                 curr = max_date - timedelta(days=30)
-            avg_views = sum(daily_reels.values()) / len(daily_reels) if daily_reels else 500
-            import hashlib
             while curr <= max_date:
                 views = daily_reels.get(curr, 0)
                 if views > 0:
                     reels_views_distribution.append({
-                        "date": curr.strftime("%b %d"),
+                        "date": curr.strftime("%d/%m/%Y"),
                         "views": views
-                    })
-                else:
-                    noise_factor = (int(hashlib.md5(curr.isoformat().encode()).hexdigest(), 16) % 100) / 100.0
-                    baseline_views = int(avg_views * (0.1 + (noise_factor * 0.2)))
-                    reels_views_distribution.append({
-                        "date": curr.strftime("%b %d"),
-                        "views": max(10, baseline_views)
                     })
                 curr += timedelta(days=1)
 
@@ -310,21 +342,12 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             curr = min_reach_date
             if (max_reach_date - curr).days < 30:
                 curr = max_reach_date - timedelta(days=30)
-            avg_reach = sum(daily_reach.values()) / len(daily_reach) if daily_reach else 500
-            import hashlib
             while curr <= max_reach_date:
                 views = daily_reach.get(curr, 0)
                 if views > 0:
                     reach_distribution_data.append({
-                        "date": curr.strftime("%b %d"),
+                        "date": curr.strftime("%d/%m/%Y"),
                         "views": views
-                    })
-                else:
-                    noise_factor = (int(hashlib.md5(curr.isoformat().encode()).hexdigest(), 16) % 100) / 100.0
-                    baseline_views = int(avg_reach * (0.1 + (noise_factor * 0.2)))
-                    reach_distribution_data.append({
-                        "date": curr.strftime("%b %d"),
-                        "views": max(10, baseline_views)
                     })
                 curr += timedelta(days=1)
 
@@ -439,129 +462,287 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
         client_calc = calculate_metrics_package(parsed_posts, client_follower_count)
 
         def get_dynamic_competitors(target_handle: str) -> list:
+            import requests
+            import os
+            import time as _time
+            import json
+            import re as _re
+
+            th_lower = target_handle.lower()
+
+            # ── Mutual-pin rules for the two main astro accounts ──────────────
+            IS_ARUN_PANDIT   = (th_lower == "astroarunpandit")
+            IS_ADITYA_KUNDLI = (th_lower == "adityakundli")
+
+            # ── Astro niche keyword detector ──────────────────────────────────
+            ASTRO_KEYWORDS = ["astro", "zodiac", "pandit", "acharya", "baba",
+                              "guru", "vedic", "kundli", "tarot", "jyotish"]
+            IS_ASTRO_NICHE = any(k in th_lower for k in ASTRO_KEYWORDS)
+
+            # ── Guaranteed hand-picked astrology accounts (always in the pool) ─
+            # These 4 are real individual creators confirmed by the user.
+            ASTRO_CORE = [
+                "astro_parduman",             # instagram.com/astro_parduman/
+                "askin_astrology",            # instagram.com/askin_astrology/
+                "astrologerdivapratihast",    # instagram.com/astrologerdivapratihast/
+                "arun_kumar_vyas_astrologer", # instagram.com/arun_kumar_vyas_astrologer/
+            ]
+
+            def _apply_astro_rule(final_list: list) -> list:
+                """Pin the correct #1 astro competitor based on who is being audited."""
+                if not IS_ASTRO_NICHE:
+                    return final_list
+                if IS_ARUN_PANDIT:
+                    for h in ["astroarunpandit", "adityakundli"]:
+                        if h in final_list: final_list.remove(h)
+                    final_list.insert(0, "adityakundli")
+                elif IS_ADITYA_KUNDLI:
+                    for h in ["adityakundli", "astroarunpandit"]:
+                        if h in final_list: final_list.remove(h)
+                    final_list.insert(0, "astroarunpandit")
+                else:
+                    if "astroarunpandit" in final_list: final_list.remove("astroarunpandit")
+                    final_list.insert(0, "astroarunpandit")
+                return final_list
+
+            # ── Brand/platform blocklist ──────────────────────────────────────
+            BRAND_BLOCKLIST = {
+                "astrotalk", "astroyogi", "anytimeastro", "astrologyzone",
+                "ganeshaspeaks", "astrosage", "clickastro", "premastrologer",
+                "astromall", "futurepoint_india", "buzzfeedtasty", "foodnetwork",
+                "natgeotravel", "travelandleisure", "designboom", "creativeboom",
+                "businessinsider", "wallstreetjournal", "techcrunch", "engadget",
+                "wired", "forbes", "entrepreneur", "gymshark", "crossfit",
+            }
+
+            def _is_individual(handle: str) -> bool:
+                h = handle.lower()
+                if h in BRAND_BLOCKLIST: return False
+                for sfx in ["talk", "yogi", "zone", "sage", "mall", "point",
+                            "network", "media", "buzzfeed", "news"]:
+                    if h.endswith(sfx) and len(h) > len(sfx) + 3: return False
+                return True
+
+            def _clean_list(handles: list) -> list:
+                seen, out = set(), []
+                for h in handles:
+                    h = h.lower().strip()
+                    if h and h != th_lower and h not in seen and _is_individual(h):
+                        seen.add(h); out.append(h)
+                return out
+
+            # ── _finalize: the core of Option C ──────────────────────────────
+            # For ASTROLOGY: merge dynamic finds WITH ASTRO_CORE (guaranteed base).
+            # For ALL OTHER niches: return dynamic finds as-is (fully dynamic).
+            def _finalize(dynamic_handles: list) -> list:
+                dynamic_clean = _clean_list(dynamic_handles)
+                if IS_ASTRO_NICHE:
+                    # Merge: dynamic first (fresh accounts), then fill from ASTRO_CORE
+                    merged = list(dict.fromkeys(dynamic_clean + ASTRO_CORE))
+                    merged = _clean_list(merged)  # re-clean after merge
+                    return _apply_astro_rule(merged)[:5]
+                else:
+                    # Non-astro: purely dynamic, no hardcoded injection
+                    return dynamic_clean[:5]
+
+            # ── 24-hour file cache for LLM results ───────────────────────────
+            # Avoids Gemini rate-limit failures on repeated audits of same handle.
+            _CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "competitor_cache.json")
+            _CACHE_TTL  = 86400  # 24 hours
+
+            def _cache_get(handle: str):
+                try:
+                    if os.path.exists(_CACHE_PATH):
+                        with open(_CACHE_PATH, "r", encoding="utf-8") as f:
+                            cache = json.load(f)
+                        entry = cache.get(handle)
+                        if entry and (_time.time() - entry.get("ts", 0)) < _CACHE_TTL:
+                            print(f"DEBUG: Cache hit for '{handle}' — {len(entry['handles'])} handles")
+                            return entry["handles"]
+                except Exception as ce:
+                    print(f"DEBUG: Cache read error ({ce})")
+                return None
+
+            def _cache_set(handle: str, handles: list):
+                try:
+                    cache = {}
+                    if os.path.exists(_CACHE_PATH):
+                        with open(_CACHE_PATH, "r", encoding="utf-8") as f:
+                            cache = json.load(f)
+                    cache[handle] = {"ts": _time.time(), "handles": handles}
+                    with open(_CACHE_PATH, "w", encoding="utf-8") as f:
+                        json.dump(cache, f)
+                    print(f"DEBUG: Cached {len(handles)} handles for '{handle}'")
+                except Exception as ce:
+                    print(f"DEBUG: Cache write error ({ce})")
+
+            # ─────────────────────────────────────────────────────────────────
+            # CHECK LLM CACHE FIRST (fast path — avoids all API calls)
+            # ─────────────────────────────────────────────────────────────────
+            cached = _cache_get(th_lower)
+            if cached and len(cached) >= 2:
+                return _finalize(cached)
+
+            # ─────────────────────────────────────────────────────────────────
+            # METHOD 1 — Instagram web_profile_info + Chaining API
+            # ─────────────────────────────────────────────────────────────────
+            common_headers = {
+                'x-ig-app-id': '936619743392459',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept': '*/*',
+                'Referer': f'https://www.instagram.com/{target_handle}/',
+            }
+            user_id = None
             try:
-                import requests
-                import os
-                gemini_key = os.getenv("GEMINI_API_KEY")
-                if not gemini_key:
-                    raise ValueError("No Gemini key")
-                gemini_key = gemini_key.strip()
-                
-                prompt = f"Given the Instagram handle @{target_handle}, first identify their core niche and specific regional/demographic market (e.g., Indian Astrology, US Fitness, UK Food). Then, list 7 direct or related competitor Instagram accounts that target the EXACT SAME regional market and niche. Return ONLY a comma-separated list of their exact Instagram handles (no @ symbols, no spaces, no other text). For example: apple,microsoft,google,samsung,sony,hp,dell"
-                
-                # Dynamic model rotation for maximum reliability and rate-limit resilience
-                models = [
-                    "gemini-2.5-flash",
-                    "gemini-2.0-flash",
-                    "gemini-1.5-flash-latest",
-                    "gemini-1.5-pro-latest"
-                ]
-                text = ""
-                success = False
-                
-                for model in models:
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
-                    payload = {
-                        "contents": [{"parts": [{"text": prompt}]}],
-                        "generationConfig": {"temperature": 0.2}
-                    }
-                    import time
-                    for attempt in range(2):
-                        resp = requests.post(url, json=payload, timeout=15)
-                        if resp.status_code == 429:
-                            print(f"DEBUG: Gemini model {model} rate limited. Retrying in {attempt + 1}s...")
-                            time.sleep(attempt + 1)
-                            continue
-                        elif resp.ok:
-                            text = resp.json().get("candidates", [])[0].get("content", {}).get("parts", [])[0].get("text", "")
-                            success = True
-                            break
-                        else:
-                            break
-                    if success:
-                        break
-                
-                if not success:
-                    openrouter_key = os.getenv("OPENROUTER_API_KEY")
-                    if openrouter_key:
-                        or_url = "https://openrouter.ai/api/v1/chat/completions"
-                        or_payload = {
-                            "model": "google/gemini-2.5-flash",
-                            "messages": [{"role": "user", "content": prompt}],
-                            "temperature": 0.2
-                        }
-                        or_headers = {"Authorization": f"Bearer {openrouter_key.strip()}"}
-                        or_resp = requests.post(or_url, json=or_payload, headers=or_headers, timeout=15)
-                        or_resp.raise_for_status()
-                        text = or_resp.json()["choices"][0]["message"]["content"]
-                    else:
-                        raise RuntimeError("All direct Gemini models failed and OpenRouter is not configured.")
-                        
-                import re
-                text = re.sub(r'```[a-zA-Z]*\n', '', text)
-                text = text.replace('```', '')
-                
-                # Gemini often ignores "Return ONLY..." and adds preamble. The handles are usually on the last line.
-                lines = [line for line in text.split('\n') if line.strip()]
-                if not lines:
-                    raise ValueError("Empty response from LLM")
-                    
-                last_line = lines[-1]
-                raw_handles = [h.strip().lower() for h in last_line.replace("@", "").split(",") if h.strip()]
-                
-                clean_handles = []
-                for h in raw_handles:
-                    cleaned = re.sub(r'[^a-z0-9._]', '', h)
-                    if cleaned and cleaned != target_handle.lower():
-                        clean_handles.append(cleaned)
-                        
-                if len(clean_handles) >= 3:
-                    return clean_handles[:7]
+                r_profile = requests.get(
+                    f"https://www.instagram.com/api/v1/users/web_profile_info/?username={target_handle}",
+                    headers=common_headers, timeout=10
+                )
+                if r_profile.status_code == 200:
+                    user = r_profile.json().get('data', {}).get('user', {})
+                    user_id = user.get('id')
+                    related = [e.get('node', {}).get('username', '').lower()
+                               for e in user.get('edge_related_profiles', {}).get('edges', [])]
+                    if len(_clean_list(related)) >= 3:
+                        print(f"DEBUG: edge_related_profiles gave {len(related)} handles for {target_handle}")
+                        return _finalize(related)
             except Exception as e:
-                print(f"DEBUG: Dynamic competitors failed ({e}). Using niche fallback map.")
-                pass
-            
-            # TRUE DYNAMIC FALLBACK BASED ON HANDLE
-            th = target_handle.lower()
-            
-            indian_competitors = ["astrotalk", "sundeep.kochar", "astroyogi", "anytimeastro", "premastrologer", "tarot_reader_nidhi", "astrologyzone"]
-            sports_competitors = ["rohitsharma45", "mahi7781", "cristiano", "leomessi", "hardikpandya93"]
-            entertainment_competitors = ["priyankachopra", "katrinakaif", "aliaabhatt", "deepikapadukone", "iamsrk"]
-            fashion_competitors = ["hudabeauty", "kyliejenner", "kimkardashian", "gigihadid", "chiaraferragni"]
-            travel_competitors = ["beautifuldestinations", "natgeotravel", "travelandleisure", "lonelyplanet", "cntraveler"]
-            art_competitors = ["artofvisuals", "designboom", "juxtapozmag", "creativeboom", "itsnicethat"]
-            business_competitors = ["entrepreneur", "forbes", "businessinsider", "bloombergbusiness", "wallstreetjournal"]
-            education_competitors = ["sciencechannel", "neildegrassetyson", "billnye", "physicstoday", "scientific_american"]
-            general_creators = ["mrbeast", "khaby00", "charliamelio", "addisonraee", "zachking"]
-            
-            if any(k in th for k in ["astro", "zodiac", "pandit", "acharya", "baba", "guru", "vedic", "kundli", "tarot", "jyotish"]):
-                return [c for c in indian_competitors if c.lower() != th][:5]
-            elif any(k in th for k in ["cric", "virat", "kohli", "dhoni", "rohit", "sachin", "sport", "game", "play", "football", "soccer", "tennis", "athlete"]):
-                return [c for c in sports_competitors if c.lower() != th][:5]
-            elif any(k in th for k in ["bolly", "holly", "actor", "actress", "cinema", "movie", "music", "singer", "star", "celebrity", "show", "tv"]):
-                return [c for c in entertainment_competitors if c.lower() != th][:5]
-            elif any(k in th for k in ["fashion", "beauty", "makeup", "style", "wear", "look", "glam", "dress", "design"]):
-                return [c for c in fashion_competitors if c.lower() != th][:5]
-            elif any(k in th for k in ["travel", "tour", "explore", "wild", "photo", "pic", "cam", "lens"]):
-                return [c for c in travel_competitors if c.lower() != th][:5]
-            elif any(k in th for k in ["art", "draw", "paint", "sketch", "design", "illustr", "creativ"]):
-                return [c for c in art_competitors if c.lower() != th][:5]
-            elif any(k in th for k in ["biz", "money", "market", "finance", "sell", "trade", "invest", "wealth"]):
-                return [c for c in business_competitors if c.lower() != th][:5]
-            elif any(k in th for k in ["edu", "learn", "science", "fact", "know", "study", "teach", "math", "physic"]):
-                return [c for c in education_competitors if c.lower() != th][:5]
-            elif "tech" in th or "code" in th or "dev" in th:
-                return ["mkbhd", "wired", "techcrunch", "engadget", "theverge"]
-            elif "fit" in th or "gym" in th or "workout" in th:
-                return ["gymshark", "chrisbumstead", "kayla_itsines", "crossfit", "chloeting"]
-            elif "food" in th or "chef" in th or "eat" in th:
-                return ["gordonramsay", "buzzfeedtasty", "foodnetwork", "jamieoliver", "nigellalawson"]
-            elif "nasa" in th or "space" in th:
-                return ["spacex", "esa", "blueorigin", "iss", "rosetta_mission"]
+                print(f"DEBUG: web_profile_info failed ({e})")
+
+            if user_id:
+                try:
+                    _time.sleep(0.5)
+                    r_chain = requests.get(
+                        f"https://www.instagram.com/api/v1/discover/chaining/?target_id={user_id}",
+                        headers=common_headers, timeout=10
+                    )
+                    if r_chain.status_code == 200:
+                        chain = [u.get('username', '').lower() for u in r_chain.json().get('users', [])]
+                        if len(_clean_list(chain)) >= 3:
+                            print(f"DEBUG: Chaining API gave {len(chain)} handles for {target_handle}")
+                            return _finalize(chain)
+                        else:
+                            print(f"DEBUG: Chaining API returned too few individual accounts — falling back to LLM")
+                except Exception as e:
+                    print(f"DEBUG: Chaining API failed ({e})")
+
+            # ─────────────────────────────────────────────────────────────────
+            # METHOD 2 — LLM (Gemini / OpenRouter) with 24-hour cache
+            # ─────────────────────────────────────────────────────────────────
+            try:
+                gemini_key = os.getenv("GEMINI_API_KEY")
+                if not gemini_key: raise ValueError("No Gemini key")
+
+                prompt = (
+                    f"Instagram handle: @{target_handle}\n\n"
+                    "Task: Find 7 INDIVIDUAL CREATOR accounts on Instagram in the same niche.\n\n"
+                    "STRICT RULES:\n"
+                    "- Return ONLY individual person/creator accounts (real humans who post content)\n"
+                    "- BANNED (do NOT return): astrotalk, astroyogi, anytimeastro, ganeshaspeaks, "
+                    "astrosage — these are apps/brands, NOT individual creators\n"
+                    "- Return real individual people only, not companies or platforms\n"
+                    "- Same country/region as the target handle\n\n"
+                    "Return ONLY: handle1,handle2,handle3,handle4,handle5,handle6,handle7\n"
+                    "No @ symbols. No spaces. No explanation. Just the comma-separated list."
+                )
+
+                models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest"]
+                text, success = "", False
+                import time as _t
+                for model in models:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key.strip()}"
+                    for attempt in range(2):
+                        resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}],
+                                                        "generationConfig": {"temperature": 0.1}}, timeout=15)
+                        if resp.status_code == 429:
+                            _t.sleep(attempt + 1); continue
+                        if resp.ok:
+                            text = resp.json().get("candidates", [])[0].get("content", {}).get("parts", [])[0].get("text", "")
+                            success = True; break
+                        break
+                    if success: break
+
+                if not success:
+                    or_key = os.getenv("OPENROUTER_API_KEY")
+                    if or_key:
+                        or_resp = requests.post(
+                            "https://openrouter.ai/api/v1/chat/completions",
+                            json={"model": "google/gemini-2.5-flash",
+                                  "messages": [{"role": "user", "content": prompt}],
+                                  "temperature": 0.1},
+                            headers={"Authorization": f"Bearer {or_key.strip()}"}, timeout=15
+                        )
+                        text = or_resp.json()["choices"][0]["message"]["content"]
+                        success = True
+
+                if success and text:
+                    cleaned_text = _re.sub(r'```[a-zA-Z]*\n', '', text).replace('```', '')
+                    last_line = [l for l in cleaned_text.split('\n') if l.strip()][-1]
+                    raw = [_re.sub(r'[^a-z0-9._]', '', h.strip().lower())
+                           for h in last_line.replace("@", "").split(",") if h.strip()]
+                    llm_handles = _clean_list([h for h in raw if h])
+                    if len(llm_handles) >= 3:
+                        print(f"DEBUG: LLM gave {len(llm_handles)} handles for {target_handle} — caching")
+                        _cache_set(th_lower, llm_handles)  # save to 24hr cache
+                        return _finalize(llm_handles)
+
+            except Exception as e:
+                print(f"DEBUG: LLM failed ({e}) — falling through to static fallback")
+
+            # ─────────────────────────────────────────────────────────────────
+            # METHOD 3 — Static fallback (last resort only)
+            # Astrology: ASTRO_CORE + mutual pin   |   Other niches: hardcoded pools
+            # ─────────────────────────────────────────────────────────────────
+            th = th_lower
+
+            if IS_ARUN_PANDIT:
+                astro_pool = ["adityakundli"] + ASTRO_CORE
+            elif IS_ADITYA_KUNDLI:
+                astro_pool = ["astroarunpandit"] + ASTRO_CORE
             else:
-                return [c for c in general_creators if c.lower() != th][:5]
+                astro_pool = ["astroarunpandit", "adityakundli"] + ASTRO_CORE
+
+            sports_pool        = ["virat.kohli", "mahi7781", "rohitsharma45", "hardikpandya93", "neeraj____chopra", "smriti_mandhana"]
+            entertainment_pool = ["shraddhakapoor", "priyankachopra", "aliaabhatt", "deepikapadukone", "iamsrk", "katrinakaif"]
+            fashion_pool       = ["komalpandeyofficial", "thatbohogirl", "masabagupta", "aashnashroff", "siddharth93batra", "diipakhosla"]
+            travel_pool        = ["anunaysood", "bruisedpassports", "tanyakhanijow", "shenaztreasury", "larissa_wlc", "aakanksha.monga"]
+            art_pool           = ["madstuffwithrob", "aliciasouza", "thefilmyowl", "neha.doodles", "vimalchandran", "pranitart"]
+            finance_pool       = ["ankurwarikoo", "financewithsharan", "rachanaranade", "pranjalkamra", "fincocktail", "akshat.shrivastava"]
+            education_pool     = ["dhruvrathee", "physicswallah", "khansirgsofficial", "dr_vikas_divyakirti", "aman.dhattarwal", "shradhakhapra"]
+            tech_pool          = ["technicalguruji", "shlok_srivastava", "techbar", "trakin_tech", "beebomco", "ruhezamrel"]
+            fitness_pool       = ["sahilkhan", "ranveer.allahbadia", "guru_mann", "sangram_chougule_official", "sonali_swami", "yatindersingh_official"]
+            food_pool          = ["ranveer.brar", "sanjeevkapoor", "yourfoodlab", "kunalkapur", "kavitaskitchen", "hebbars.kitchen"]
+            general_pool       = ["bhuvan.bam22", "carryminati", "ashishchanchlani", "prajaktakoli", "kushakapila", "harshbeniwal"]
+
+            if IS_ASTRO_NICHE:
+                result = [c for c in astro_pool if c != th][:5]
+                return _apply_astro_rule(result)
+            elif any(k in th for k in ["cric","virat","kohli","dhoni","rohit","sachin","sport","game","play","football","soccer","tennis","athlete"]):
+                return [c for c in sports_pool if c != th][:5]
+            elif any(k in th for k in ["bolly","holly","actor","actress","cinema","movie","music","singer","star","celebrity","show","tv"]):
+                return [c for c in entertainment_pool if c != th][:5]
+            elif any(k in th for k in ["fashion","beauty","makeup","style","wear","look","glam","dress"]):
+                return [c for c in fashion_pool if c != th][:5]
+            elif any(k in th for k in ["travel","tour","explore","wild","cam","lens","wander"]):
+                return [c for c in travel_pool if c != th][:5]
+            elif any(k in th for k in ["art","draw","paint","sketch","illustr","creativ"]):
+                return [c for c in art_pool if c != th][:5]
+            elif any(k in th for k in ["biz","money","market","finance","invest","wealth","trade"]):
+                return [c for c in finance_pool if c != th][:5]
+            elif any(k in th for k in ["edu","learn","science","fact","know","study","teach","math","physic"]):
+                return [c for c in education_pool if c != th][:5]
+            elif any(k in th for k in ["tech","code","dev","program","software"]):
+                return [c for c in tech_pool if c != th][:5]
+            elif any(k in th for k in ["fit","gym","workout","muscle","training","yoga"]):
+                return [c for c in fitness_pool if c != th][:5]
+            elif any(k in th for k in ["food","chef","eat","cook","recipe","kitchen"]):
+                return [c for c in food_pool if c != th][:5]
+            else:
+                return [c for c in general_pool if c != th][:5]
 
         competitor_handles = get_dynamic_competitors(handle)
+
         competitor_metrics_list = []
 
         def fetch_competitor(comp_handle, rank):
@@ -569,7 +750,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
             is_mock = False
             is_invalid = False
             try:
-                comp_posts = scrape_latest_15_posts(comp_url)
+                comp_posts = scrape_latest_15_posts(comp_url, date_from, date_to)
                 # Filter out metadata/profile items
                 comp_posts = [
                     p for p in comp_posts
@@ -844,11 +1025,13 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str):
 @app.get("/api/dashboard-audit")
 def get_dashboard_intelligence(
     background_tasks: BackgroundTasks,
-    profile_url: str = Query("https://www.instagram.com/nasa", description="Instagram profile URL to audit")
+    profile_url: str = Query("https://www.instagram.com/nasa", description="Instagram profile URL to audit"),
+    date_from: str = Query(None, description="Start date for the audit (YYYY-MM-DD)"),
+    date_to: str = Query(None, description="End date for the audit (YYYY-MM-DD)")
 ):
     job_id = str(uuid.uuid4())
     audit_jobs[job_id] = {"status": "processing"}
-    background_tasks.add_task(run_live_apify_competitor_audit, job_id, profile_url)
+    background_tasks.add_task(run_live_apify_competitor_audit, job_id, profile_url, date_from, date_to)
     return {"job_id": job_id, "status": "processing"}
 
 @app.get("/api/audit-status/{job_id}")
@@ -884,7 +1067,7 @@ def get_audit_status(job_id: str):
 @app.get("/api/history-list")
 def get_history_list():
     try:
-        with open(HISTORY_DB_PATH, "r") as f:
+        with open(HISTORY_DB_PATH, "r", encoding="utf-8") as f:
             history_db = json.load(f)
     except:
         return []
@@ -914,7 +1097,10 @@ def fill_distribution_gaps(items, audit_year=2026):
             continue
         try:
             clean_date_str = date_str.strip().replace("Wk of ", "")
-            dt = datetime.strptime(f"{clean_date_str} {audit_year}", "%b %d %Y").date()
+            try:
+                dt = datetime.strptime(clean_date_str, "%d/%m/%Y").date()
+            except ValueError:
+                dt = datetime.strptime(f"{clean_date_str} {audit_year}", "%b %d %Y").date()
             parsed_dict[dt] = views
         except Exception:
             try:
@@ -939,20 +1125,20 @@ def fill_distribution_gaps(items, audit_year=2026):
     curr = min_dt
     while curr <= max_dt:
         if curr in parsed_dict:
-            filled.append({"date": curr.strftime("%b %d"), "views": parsed_dict[curr]})
+            filled.append({"date": curr.strftime("%d/%m/%Y"), "views": parsed_dict[curr]})
         else:
             # Generate highly realistic continuous baseline noise for non-post days
             noise_factor = (int(hashlib.md5(curr.isoformat().encode()).hexdigest(), 16) % 100) / 100.0
             baseline_views = int(avg_views * (0.1 + (noise_factor * 0.2)))
-            filled.append({"date": curr.strftime("%b %d"), "views": max(10, baseline_views)})
+            filled.append({"date": curr.strftime("%d/%m/%Y"), "views": max(10, baseline_views)})
         curr += timedelta(days=1)
         
     return filled
 
-@app.get("/api/history-snapshot/{username}")
+@app.get("/api/history/{username}/data")
 def get_history_snapshot(username: str):
     try:
-        with open(HISTORY_DB_PATH, "r") as f:
+        with open(HISTORY_DB_PATH, "r", encoding="utf-8") as f:
             history_db = json.load(f)
     except:
         raise HTTPException(status_code=500, detail="History database unavailable")

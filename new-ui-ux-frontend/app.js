@@ -14,17 +14,31 @@ function resolvePostUrl(post) {
   return 'https://www.instagram.com/p/' + url + '/';
 }
 
+function fmtTrendDate(d) {
+  // Convert YYYY-MM-DD to DD/MM/YYYY format
+  if (!d) return "Default 15 posts audit";
+  try {
+    const parts = d.split('-');
+    if (parts.length === 3) {
+      const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+  } catch(e) {}
+  return d;
+}
+
 async function fetchDynamicThumbnail(post, imgElement) {
   if (!post || !imgElement) return;
   
   const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://127.0.0.1:8000';
   
   if (post.display_url && !post.display_url.includes('picsum.photos')) {
-    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}`;
+    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}&post_url=${encodeURIComponent(resolvePostUrl(post))}`;
     return;
   }
   
-  imgElement.src = `https://picsum.photos/seed/${post.shortcode || post.index || Math.random()}/100/100`;
+  const seed = post.shortcode || post.index || Math.random().toString();
+  imgElement.src = `https://picsum.photos/seed/${encodeURIComponent(seed)}/100/100`;
 }
 
 let state = {
@@ -150,7 +164,7 @@ async function handleHistoryClick(username) {
   hideError();
 
   try {
-    const res = await fetch(`${BACKEND_URL}/api/history-snapshot/${encodeURIComponent(username)}`);
+    const res = await fetch(`${BACKEND_URL}/api/history/${encodeURIComponent(username)}/data`);
     if (!res.ok) throw new Error(`Snapshot fetch failed with code ${res.status}`);
     const data = await res.json();
 
@@ -160,7 +174,11 @@ async function handleHistoryClick(username) {
     displayDashboard(data);
   } catch (err) {
     console.error(err);
-    showError(`Failed to load snapshot for @${username}. ${err.message}`);
+    if (err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
+      showError(`Network Error: Cannot reach the backend server. Please ensure the backend is running. (Failed to load @${username})`);
+    } else {
+      showError(`Failed to load snapshot for @${username}. ${err.message}`);
+    }
   } finally {
     setLoadingState(false);
   }
@@ -178,7 +196,14 @@ async function handleSearchSubmit(e) {
 
   try {
     const encodedUrl = encodeURIComponent(profileUrl);
-    const response = await fetch(`${BACKEND_URL}/api/dashboard-audit?profile_url=${encodedUrl}`);
+    const dateFrom = document.getElementById('date-from')?.value;
+    const dateTo = document.getElementById('date-to')?.value;
+    
+    let apiUrl = `${BACKEND_URL}/api/dashboard-audit?profile_url=${encodedUrl}`;
+    if (dateFrom) apiUrl += `&date_from=${encodeURIComponent(dateFrom)}`;
+    if (dateTo) apiUrl += `&date_to=${encodeURIComponent(dateTo)}`;
+
+    const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error(`Server error: code ${response.status}`);
     }
@@ -207,7 +232,11 @@ async function handleSearchSubmit(e) {
     loadHistory(); // Refresh history list
   } catch (err) {
     console.error(err);
-    showError(err.message);
+    if (err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
+      showError(`Network Error: Cannot reach the backend server. Please ensure the backend is running.`);
+    } else {
+      showError(err.message);
+    }
   } finally {
     setLoadingState(false);
   }
@@ -611,18 +640,7 @@ function renderAllDynamicCharts(rawData) {
   const reachDistribution = rawData.reach_distribution_data || data.reach_distribution_data || [];
 
   // --- Chart 1: Audience Growth Timeline ---
-  function fmtTrendDate(d) {
-    // Convert YYYY-MM-DD to "May 12" format
-    if (!d) return d;
-    try {
-      const parts = d.split('-');
-      if (parts.length === 3) {
-        const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      }
-    } catch(e) {}
-    return d;
-  }
+
   const recentTrend = trendHistory.slice(-6);
   const trendPts = recentTrend.length >= 2 ? recentTrend.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
   const trendLabels = recentTrend.length >= 2 ? recentTrend.map(item => fmtTrendDate(item.date)) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -732,7 +750,7 @@ function renderFormatPerformanceBattle(data) {
       reelsTopContainer.innerHTML = `<div style="font-size: 11px; color: var(--faint); font-style: italic; text-align: center; padding: 12px 0;">No Reels posts</div>`;
     } else {
       reelsTopContainer.innerHTML = reelsTop.slice(0, 5).map(post => `
-        <a href="${resolvePostUrl(post)}" target="_blank" class="post-row">
+        <a href="${resolvePostUrl(post)}" target="_blank" rel="noopener noreferrer" class="post-row">
           <span class="pn">
             <span class="post-lk">#</span>${post.index}
             <span class="post-link-btn">
@@ -757,7 +775,7 @@ function renderFormatPerformanceBattle(data) {
       staticTopContainer.innerHTML = `<div style="font-size: 11px; color: var(--faint); font-style: italic; text-align: center; padding: 12px 0;">No Static Posts</div>`;
     } else {
       staticTopContainer.innerHTML = staticTop.slice(0, 5).map(post => `
-        <a href="${resolvePostUrl(post)}" target="_blank" class="post-row">
+        <a href="${resolvePostUrl(post)}" target="_blank" rel="noopener noreferrer" class="post-row">
           <span class="pn">
             <span class="post-lk">#</span>${post.index}
             <span class="post-link-btn">
@@ -913,7 +931,7 @@ function renderMedianMetricsAndBestWorst(data) {
 
   const bestLinkEl = document.getElementById('best-post-link');
   if (bestLinkEl) {
-    bestLinkEl.innerHTML = `<a href="${resolvePostUrl(bestPost)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+    bestLinkEl.innerHTML = `<a href="${resolvePostUrl(bestPost)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
       View Live Post
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -930,13 +948,17 @@ function renderMedianMetricsAndBestWorst(data) {
   if (bestThumb) {
     fetchDynamicThumbnail(bestPost, bestThumb);
   }
+  const bestPostRow = document.getElementById('best-post-row');
+  if (bestPostRow) {
+    bestPostRow.onclick = () => window.open(resolvePostUrl(bestPost), '_blank', 'noopener,noreferrer');
+  }
 
   const worstStatsEl = document.getElementById('worst-post-stats');
   if (worstStatsEl) worstStatsEl.textContent = `${(worstPost.likes || 0).toLocaleString()} likes · ${(worstPost.comments || 0).toLocaleString()} comments`;
 
   const worstLinkEl = document.getElementById('worst-post-link');
   if (worstLinkEl) {
-    worstLinkEl.innerHTML = `<a href="${resolvePostUrl(worstPost)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+    worstLinkEl.innerHTML = `<a href="${resolvePostUrl(worstPost)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
       View Live Post
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -952,6 +974,10 @@ function renderMedianMetricsAndBestWorst(data) {
   const worstThumb = document.getElementById('worst-post-thumbnail');
   if (worstThumb) {
     fetchDynamicThumbnail(worstPost, worstThumb);
+  }
+  const worstPostRow = document.getElementById('worst-post-row');
+  if (worstPostRow) {
+    worstPostRow.onclick = () => window.open(resolvePostUrl(worstPost), '_blank', 'noopener,noreferrer');
   }
 }
 
@@ -973,7 +999,7 @@ function renderBestByType(data) {
   // Helper to build the "View Live Post" link HTML
   const buildLinkHTML = (post) => {
     if (!post) return '<span style="color:var(--faint); font-style:italic;">No posts of this type</span>';
-    return `<a href="${resolvePostUrl(post)}" target="_blank" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+    return `<a href="${resolvePostUrl(post)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
       View Live Post
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -989,11 +1015,13 @@ function renderBestByType(data) {
   const reelStatsEl = document.getElementById('best-reel-stats');
   const reelLinkEl = document.getElementById('best-reel-link');
   const reelThumb = document.getElementById('best-reel-thumbnail');
+  const reelRow = document.getElementById('best-reel-row');
 
   if (bestReel) {
     if (reelStatsEl) reelStatsEl.textContent = `${(bestReel.likes || 0).toLocaleString()} likes \u00B7 ${(bestReel.comments || 0).toLocaleString()} comments`;
     if (reelLinkEl) reelLinkEl.innerHTML = buildLinkHTML(bestReel);
     if (reelThumb) fetchDynamicThumbnail(bestReel, reelThumb);
+    if (reelRow) reelRow.onclick = () => window.open(resolvePostUrl(bestReel), '_blank', 'noopener,noreferrer');
   } else {
     if (reelStatsEl) reelStatsEl.textContent = '—';
     if (reelLinkEl) reelLinkEl.innerHTML = buildLinkHTML(null);
@@ -1003,11 +1031,13 @@ function renderBestByType(data) {
   const staticStatsEl = document.getElementById('best-static-stats');
   const staticLinkEl = document.getElementById('best-static-link');
   const staticThumb = document.getElementById('best-static-thumbnail');
+  const staticRow = document.getElementById('best-static-row');
 
   if (bestStatic) {
     if (staticStatsEl) staticStatsEl.textContent = `${(bestStatic.likes || 0).toLocaleString()} likes \u00B7 ${(bestStatic.comments || 0).toLocaleString()} comments`;
     if (staticLinkEl) staticLinkEl.innerHTML = buildLinkHTML(bestStatic);
     if (staticThumb) fetchDynamicThumbnail(bestStatic, staticThumb);
+    if (staticRow) staticRow.onclick = () => window.open(resolvePostUrl(bestStatic), '_blank', 'noopener,noreferrer');
   } else {
     if (staticStatsEl) staticStatsEl.textContent = '—';
     if (staticLinkEl) staticLinkEl.innerHTML = buildLinkHTML(null);
@@ -1077,13 +1107,13 @@ function _renderFeedList(feedId, viewerId, posts, medianLikes, stateKey) {
             ${isWin 
               ? '<span style="color:var(--accent);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(198,255,58,0.1);">WIN</span>' 
               : '<span style="color:var(--neg);font-weight:800;font-size:10px;margin-left:6px;padding:2px 6px;border-radius:4px;background:rgba(255,99,99,0.1);">FIX</span>'}
-            <span style="color:var(--faint);font-weight:500;font-size:11px;margin-left:4px;">· ${post.date || '—'}</span>
+            <span style="color:var(--faint);font-weight:500;font-size:11px;margin-left:4px;">· ${fmtTrendDate(post.date)}</span>
           </div>
           <div class="cap">${cleanSnippet}</div>
         </div>
         <div class="feed-likes">
           <span style="color: var(--neg);">❤</span> ${(post.likes || 0).toLocaleString()}
-          <a href="${resolvePostUrl(post)}" target="_blank" style="color:var(--accent);text-decoration:none;margin-left:8px;" title="View Live Post" onclick="event.stopPropagation()">
+          <a href="${resolvePostUrl(post)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;margin-left:8px;" title="View Live Post" onclick="event.stopPropagation()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>
@@ -1145,12 +1175,12 @@ function renderPostDeepDive(post, viewerId = 'post-deep-dive-viewer') {
       <div class="diag-head">
         <div>
           <div class="diag-title">${post.index}</div>
-          <div class="diag-meta">Posted on ${post.date || '—'} · ${post.type || 'Photo'}</div>
+          <div class="diag-meta">Posted on ${fmtTrendDate(post.date)} · ${post.type || 'Photo'}</div>
         </div>
         <span class="pill dot ${post.is_above_baseline ? 'win' : 'fix'}">${post.is_above_baseline ? 'Above Baseline' : 'Below Baseline'}</span>
       </div>
       <div class="diag-actions">
-        ${post.post_url ? `<button class="btn" style="background:var(--accent);color:var(--bg);font-weight:700;border:none;" onclick="window.open('${post.post_url}', '_blank')">↗ Open the Post</button>` : ''}
+        ${resolvePostUrl(post) !== '#' ? `<button class="btn" style="background:var(--accent);color:var(--bg);font-weight:700;border:none;" onclick="window.open('${resolvePostUrl(post)}', '_blank', 'noopener,noreferrer')">↗ Open the Post</button>` : ''}
         <button class="btn btn-ghost" onclick="clip(\`${caption.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, 'Caption')">⧉ Copy Caption</button>
       </div>
       <div class="caption-box">
@@ -1205,7 +1235,7 @@ function renderCompetitors(competitors, clientFollowers = 0) {
         <div class="competitor-card-header">
           <div class="comp-rank-group">
             <span class="comp-rank-badge">#${comp.rank}</span>
-            <a href="https://www.instagram.com/${cleanHandle}" target="_blank" class="comp-username" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:6px; cursor:pointer; position:relative; z-index:10;" title="View Instagram Profile">
+            <a href="https://www.instagram.com/${cleanHandle}" target="_blank" rel="noopener noreferrer" class="comp-username" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:6px; cursor:pointer; position:relative; z-index:10;" title="View Instagram Profile">
               ${handleName}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
@@ -1232,12 +1262,7 @@ function renderCompetitors(competitors, clientFollowers = 0) {
               </div>
               <span class="comp-stat-box-val">${followersFormatted}</span>
             </div>
-            <div class="comp-stat-box">
-              <div class="comp-stat-box-title">
-                <span>Velocity</span>
-              </div>
-              <span class="comp-stat-box-val">${velocity > 0 ? (7 / velocity).toFixed(1) : '0'} <span style="font-size:8px; font-weight:500;">/wk</span></span>
-            </div>
+
           </div>
 
           <!-- Ghost Followers -->
@@ -1250,7 +1275,7 @@ function renderCompetitors(competitors, clientFollowers = 0) {
           <div class="comp-highlights">
             <div>
               <span class="comp-highlight-title">Best Post</span>
-              <a href="${resolvePostUrl(comp.metrics?.best_post)}" target="_blank" class="comp-highlight-btn best" style="position: relative;">
+              <a href="${resolvePostUrl(comp.metrics?.best_post)}" target="_blank" rel="noopener noreferrer" class="comp-highlight-btn best" style="position: relative;">
                 <svg style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${bestLikes.toLocaleString()}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Likes</div>
@@ -1258,7 +1283,7 @@ function renderCompetitors(competitors, clientFollowers = 0) {
             </div>
             <div>
               <span class="comp-highlight-title">Worst Post</span>
-              <a href="${resolvePostUrl(comp.metrics?.worst_post)}" target="_blank" class="comp-highlight-btn worst" style="position: relative;">
+              <a href="${resolvePostUrl(comp.metrics?.worst_post)}" target="_blank" rel="noopener noreferrer" class="comp-highlight-btn worst" style="position: relative;">
                 <svg style="position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; color: currentColor; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>${worstLikes.toLocaleString()}</span>
                 <div style="font-size: 7px; text-transform: uppercase; font-weight:700; margin-top:2px;">Likes</div>

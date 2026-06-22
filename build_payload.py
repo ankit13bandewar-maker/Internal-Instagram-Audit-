@@ -1,4 +1,5 @@
 import re
+import html
 
 def main():
     # Paths
@@ -24,48 +25,87 @@ def main():
     with open(css_path, 'r', encoding='utf-8') as f:
         css_content = f.read()
         
-    # Replace html/body selectors in CSS with the wrapper class to prevent WP overrides
-    # (Just a basic encapsulation helper)
-    css_content = css_content.replace('body {', '.audit-dashboard-root-wrapper {')
+    # Remove the basic encapsulation since we are using an iframe
+    css_content = css_content.replace('body {', 'body { margin: 0; padding: 0; ')
     
     # Read JS
     with open(js_path, 'r', encoding='utf-8') as f:
         js_content = f.read()
         
-    # Keep the original JS content intact so that local file viewing works properly
-    pass
+    # Add iframe auto-resizer to the JS payload
+    iframe_resizer_js = """
+// IFRAME RESIZER LOGIC
+document.addEventListener("DOMContentLoaded", function() {
+    const observer = new ResizeObserver(() => {
+        window.parent.postMessage({ type: 'audit-resize', height: document.documentElement.scrollHeight + 20 }, '*');
+    });
+    observer.observe(document.body);
+    
+    // Also trigger on click/interactions just in case
+    document.body.addEventListener("click", () => {
+        setTimeout(() => {
+            window.parent.postMessage({ type: 'audit-resize', height: document.documentElement.scrollHeight + 20 }, '*');
+        }, 100);
+    });
+});
+"""
+    js_content += "\n" + iframe_resizer_js
                  
-    # Assemble
+    # Assemble inner HTML for the iframe
+    inner_html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+{css_content}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="audit-dashboard-root-wrapper" style="background: #0A0A0E; margin: 0; padding: 0; overflow-x: hidden;">
+{body_inner}
+<script>
+{js_content}
+</script>
+</body>
+</html>
+"""
+    
+    # Escape the inner HTML for the srcdoc attribute
+    escaped_inner_html = html.escape(inner_html)
+    
+    # Assemble the final WordPress widget wrapper
     final_output = f"""
 <!-- 
   ==============================================================
   INSTAGRAM AUDIT DASHBOARD - WORDPRESS/ELEMENTOR READY PAYLOAD
+  100% Isolated from Theme CSS via Auto-Resizing Iframe
   ==============================================================
 -->
 
-<div class="audit-dashboard-root-wrapper">
-{body_inner}
-</div>
+<iframe sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation" 
+    id="aura-audit-iframe" 
+    srcdoc="{escaped_inner_html}" 
+    style="width: 100%; min-height: 800px; border: none; background: #0A0A0E; border-radius: 12px; overflow: hidden;" 
+    scrolling="no">
+</iframe>
 
-<!-- STYLES -->
-<style>
-{css_content}
-</style>
-
-<!-- CDN DEPENDENCIES -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-
-<!-- APPLICATION LOGIC -->
 <script>
-{js_content}
+  window.addEventListener("message", function(e) {{
+      if (e.data && e.data.type === "audit-resize") {{
+          const iframe = document.getElementById("aura-audit-iframe");
+          if (iframe) {{
+              iframe.style.height = e.data.height + "px";
+          }}
+      }}
+  }});
 </script>
 """
     
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(final_output.strip())
         
-    print("Compilation successful.")
+    print("Compilation successful with iframe isolation.")
 
 if __name__ == '__main__':
     main()
