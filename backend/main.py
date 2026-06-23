@@ -46,19 +46,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Mount the frontend static files at the root
-frontend_dir = os.path.join(base_dir, "..", "new-ui-ux-frontend")
-if os.path.exists(frontend_dir):
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
-else:
-    @app.get("/")
-    def root():
-        """Fallback root endpoint - API is live and ready."""
-        return {
-            "status": "ok",
-            "message": "Instagram Account Audit API is running (Frontend not found)",
-            "version": "1.0.0"
-        }
+
 
 @app.get("/health")
 def health_check():
@@ -1525,3 +1513,17 @@ async def get_dynamic_hashtag_analytics(
     }
 
 
+# Mount the frontend static files at the root
+# MUST BE AT THE END so it doesn't shadow /api routes
+frontend_dir = os.path.join(base_dir, "..", "new-ui-ux-frontend")
+if os.path.exists(frontend_dir):
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+else:
+    @app.get("/")
+    def root():
+        """Fallback root endpoint - API is live and ready."""
+        return {
+            "status": "ok",
+            "message": "Instagram Account Audit API is running (Frontend not found)",
+            "version": "1.0.0"
+        }
