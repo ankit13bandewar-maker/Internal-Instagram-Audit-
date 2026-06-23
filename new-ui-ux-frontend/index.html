@@ -41,25 +41,37 @@
           <h1>See How an Instagram Account Is Really Doing</h1>
           <p>Paste any profile link — we'll show what's working, what's not, and what to try next.</p>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;width:100%;">
-          <form id="search-form" class="auditor" style="flex:1; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-            <label class="url-field" style="flex:1; min-width:200px;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.5 1.4"/>
-                <path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.5-1.4"/>
-              </svg>
-              <input type="text" id="profile-url" placeholder="https://www.instagram.com/username" spellcheck="false" aria-label="Instagram URL" required />
-            </label>
-            <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:flex-start; gap:12px; width:100%;">
+          <form id="search-form" class="auditor" style="flex:1; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; width:100%;">
+              <label class="url-field" style="flex:1; min-width:250px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.5 1.4"/>
+                  <path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.5-1.4"/>
+                </svg>
+                <input type="text" id="profile-url" placeholder="https://www.instagram.com/username" spellcheck="false" aria-label="Instagram URL" required />
+              </label>
+              
+              <div style="display:flex; align-items:flex-start; gap:6px; flex-shrink:1; max-width: 320px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444; flex-shrink:0; margin-top:2px;">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span style="font-size:11.5px; color:#ef4444; line-height: 1.3;">If no date range is selected, the audit will default to the account's <strong style="font-weight:600;">last 15 posts</strong> automatically. Selecting a date will consume more tokens.</span>
+              </div>
+
+              <button type="submit" class="btn btn-cta" id="submit-btn" style="flex-shrink:0; align-self:stretch;">Check This Account</button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; padding: 2px;">
               <label style="font-size:12px; color:var(--faint);">From:</label>
               <input type="date" id="date-from" style="padding:8px; border-radius:6px; border:1px solid #374151; background:var(--bg-card); color:var(--text); font-family:inherit; font-size:14px; outline:none;" />
               <label style="font-size:12px; color:var(--faint);">To:</label>
               <input type="date" id="date-to" style="padding:8px; border-radius:6px; border:1px solid #374151; background:var(--bg-card); color:var(--text); font-family:inherit; font-size:14px; outline:none;" />
             </div>
-            <button type="submit" class="btn btn-cta" id="submit-btn">Check This Account</button>
           </form>
+
           <!-- refresh button -->
-          <button class="btn btn-ghost" title="Refresh Page" style="padding: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: 8px;" onclick="location.reload()">
+          <button class="btn btn-ghost" title="Refresh Page" style="padding: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink:0;" onclick="location.reload()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 2v6h-6"></path>
               <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
@@ -67,12 +79,6 @@
               <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
             </svg>
           </button>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px; margin-top:6px; padding: 0 2px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444; flex-shrink:0;">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span style="font-size:11.5px; color:#ef4444;">If no date range is selected, the audit will default to the account's <strong style="font-weight:600;">last 15 posts</strong> automatically. Selecting a date will consume more tokens.</span>
         </div>
       </div>
     </header>
