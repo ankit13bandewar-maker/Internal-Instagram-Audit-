@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 import pandas as pd
 import os
@@ -45,20 +46,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-@app.get("/")
-def root():
-    """Root endpoint - API is live and ready."""
-    return {
-        "status": "ok",
-        "message": "Instagram Account Audit API is running",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/health",
-            "dashboard_intelligence": "/api/dashboard-intelligence?profile_url=https://www.instagram.com/nasa",
-            "hashtag_intelligence": "/api/hashtag-intelligence?profile_url=https://www.instagram.com/nasa",
-            "dynamic_hashtag_analytics": "/api/dynamic-hashtag-analytics?profile_url=https://www.instagram.com/nasa"
+# Mount the frontend static files at the root
+frontend_dir = os.path.join(base_dir, "..", "new-ui-ux-frontend")
+if os.path.exists(frontend_dir):
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+else:
+    @app.get("/")
+    def root():
+        """Fallback root endpoint - API is live and ready."""
+        return {
+            "status": "ok",
+            "message": "Instagram Account Audit API is running (Frontend not found)",
+            "version": "1.0.0"
         }
-    }
 
 @app.get("/health")
 def health_check():

@@ -1,7 +1,7 @@
 // CONFIGURATION Constants
 const BACKEND_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://127.0.0.1:8000"
-  : "https://instagram-account-audit-api.onrender.com";
+  : window.location.origin;
 const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
 
 // APP STATE
