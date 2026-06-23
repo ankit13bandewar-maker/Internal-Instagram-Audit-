@@ -35,7 +35,12 @@ app = FastAPI(
 # Standardized CORS Middleware allowance mappings to support decoupled frontend fetching
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Clean wildcard allowance to prevent browser security blocks locally and in staging
+    allow_origins=[
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "https://instagram-account-audit-frontend.onrender.com",
+        "https://client-audit-tool.onrender.com"
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -231,19 +236,22 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
             tags = set(re.findall(r'#\w+', caption))
             hashtags_used = [tag.lower() for tag in tags]
 
-            candidate_keys = ["url", "link", "post_url", "instagram_url", "shortcode", "id"]
+            # Permanent fix: resolve post URL from multiple Apify field variants
+            p_shortcode = post.get("shortCode") or post.get("shortcode") or ""
+            candidate_keys = ["url", "link", "post_url", "instagram_url"]
             post_url = None
             for key in candidate_keys:
                 val = post.get(key)
                 if val and str(val).strip().lower() != "nan":
-                    if key in ("shortcode", "id"):
-                        post_url = f"https://www.instagram.com/p/{val}/"
-                    else:
-                        post_url = val
-                        if not post_url.startswith("http"):
-                            post_url = f"https://www.instagram.com/p/{post_url}/"
+                    post_url = val
+                    if not post_url.startswith("http"):
+                        post_url = f"https://www.instagram.com/p/{post_url}/"
                     break
-            if not post_url:
+            # Fallback: build URL from shortcode if available
+            if not post_url and p_shortcode:
+                post_url = f"https://www.instagram.com/p/{p_shortcode}/"
+            # Final fallback: link to profile page
+            if not post_url or post.get("is_mock"):
                 post_url = profile_url.rstrip('/')
 
             shares = max(0, int(post.get("sharesCount") if post.get("sharesCount") is not None else post.get("shares", 0)))
@@ -264,6 +272,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
                 "caption": caption,
                 "snippet": snippet,
                 "post_url": post_url,
+                "shortcode": p_shortcode,
                 "hashtags_used": hashtags_used
             })
 
@@ -407,6 +416,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
                 "brief": brief,
                 "log_content": brief,
                 "post_url": post["post_url"],
+                "shortcode": post.get("shortcode", ""),
                 "display_url": post.get("display_url", ""),
                 "hashtags_used": post["hashtags_used"]
             }
@@ -480,12 +490,15 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
             IS_ASTRO_NICHE = any(k in th_lower for k in ASTRO_KEYWORDS)
 
             # ── Guaranteed hand-picked astrology accounts (always in the pool) ─
-            # These 4 are real individual creators confirmed by the user.
+            # These are real individual creators confirmed by the user.
             ASTRO_CORE = [
                 "astro_parduman",             # instagram.com/astro_parduman/
                 "askin_astrology",            # instagram.com/askin_astrology/
                 "astrologerdivapratihast",    # instagram.com/astrologerdivapratihast/
                 "arun_kumar_vyas_astrologer", # instagram.com/arun_kumar_vyas_astrologer/
+                "dr.jai_madan",
+                "sundeep.kochar",
+                "astrologer_shri_shivaya"
             ]
 
             def _apply_astro_rule(final_list: list) -> list:
@@ -527,6 +540,7 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
                 seen, out = set(), []
                 for h in handles:
                     h = h.lower().strip()
+                    # Filter out the currently audited profile (th_lower) to prevent it from showing up as its own competitor
                     if h and h != th_lower and h not in seen and _is_individual(h):
                         seen.add(h); out.append(h)
                 return out
@@ -537,13 +551,12 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
             def _finalize(dynamic_handles: list) -> list:
                 dynamic_clean = _clean_list(dynamic_handles)
                 if IS_ASTRO_NICHE:
-                    # Merge: dynamic first (fresh accounts), then fill from ASTRO_CORE
-                    merged = list(dict.fromkeys(dynamic_clean + ASTRO_CORE))
-                    merged = _clean_list(merged)  # re-clean after merge
-                    return _apply_astro_rule(merged)[:5]
+                    # Only show hardcoded competitors for astrology niche
+                    merged = _clean_list(ASTRO_CORE)
+                    return _apply_astro_rule(merged)
                 else:
                     # Non-astro: purely dynamic, no hardcoded injection
-                    return dynamic_clean[:5]
+                    return dynamic_clean
 
             # ── 24-hour file cache for LLM results ───────────────────────────
             # Avoids Gemini rate-limit failures on repeated audits of same handle.
@@ -844,7 +857,10 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
                 }
 
         import time
-        for idx, c_handle in enumerate(competitor_handles):
+        attempted_handles = set()
+        
+        for idx, c_handle in enumerate(competitor_handles[:5]):
+            attempted_handles.add(c_handle.lower())
             if idx > 0:
                 print(f"DEBUG: Sequential scraping delay (4s) before fetching {c_handle}...")
                 time.sleep(4)
@@ -860,9 +876,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
         # Dynamic backfill if we have fewer than 5 competitors left
         if len(competitor_metrics_list) < 5:
             fallback_pool = get_dynamic_competitors(handle)
-            existing_names = {c["competitor_name"].lower().replace("@", "") for c in competitor_metrics_list}
             needed = 5 - len(competitor_metrics_list)
-            extra_handles = [h for h in fallback_pool if h.lower() not in existing_names][:needed]
+            extra_handles = [h for h in fallback_pool if h.lower() not in attempted_handles][:needed]
             
             for idx, h in enumerate(extra_handles):
                 print(f"DEBUG: Sequential scraping delay (4s) before fetching fallback competitor {h}...")
@@ -891,17 +906,33 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
             product_type = p.get("productType")
             p_likes = max(0, int(p.get("likesCount") if p.get("likesCount") is not None else p.get("likes", 0)))
             p_comments = max(0, int(p.get("commentsCount") if p.get("commentsCount") is not None else p.get("comments", 0)))
-            p_url = p.get("url") or p.get("post_url") or (f"https://instagram.com/p/{p.get('shortCode')}/" if p.get("shortCode") else "")
-            
+            # Permanent fix: resolve a full Instagram URL with multiple fallbacks
+            p_shortcode = p.get("shortCode") or p.get("shortcode") or ""
+            p_url = (
+                p.get("url") or
+                p.get("post_url") or
+                (f"https://www.instagram.com/p/{p_shortcode}/" if p_shortcode else "")
+            )
+            # Normalize: ensure it's a full absolute URL
+            if p_url and not p_url.startswith("http"):
+                p_url = "https://www.instagram.com/p/" + p_url.lstrip("/") + "/"
+            # For mock posts, fallback to profile URL instead of dead shortcode link
+            if not p_url or p.get("is_mock"):
+                p_url = profile_url.rstrip('/')
+
+            p_display_url = p.get("displayUrl") or p.get("display_url") or ""
+
             post_obj = {
                 "index": f"Post {idx}",
                 "url": p_url,
+                "post_url": p_url,        # explicit post_url so resolvePostUrl() always finds it
+                "shortcode": p_shortcode,
                 "likes": p_likes,
                 "comments": p_comments,
                 "total_interactions": p_likes + p_comments,
-                "display_url": p.get("display_url", p.get("displayUrl", ""))
+                "display_url": p_display_url
             }
-            
+
             if post_type == "Video" or product_type == "clips":
                 reels_data["count"] += 1
                 reels_data["likes"] += p_likes
@@ -951,6 +982,64 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
             "index_score": index_score,
             "tier_label": tier_label
         }
+
+        # --- Hover-to-Zoom Leaderboard Extraction ---
+        leaderboard_data = []
+        for p in raw_posts[:15]:
+            p_id = p.get("id") or p.get("shortCode") or p.get("shortcode") or ""
+            
+            p_type = p.get("type", "")
+            p_product = p.get("productType", "")
+            p_is_video = (p_type == "Video" or p_product == "clips")
+            
+            p_thumb = p.get("display_url") or p.get("displayUrl")
+            if p_is_video and p.get("cover_image_url"):
+                p_thumb = p.get("cover_image_url")
+            
+            p_likes = max(0, int(p.get("likesCount") if p.get("likesCount") is not None else p.get("likes", 0)))
+            p_comments = max(0, int(p.get("commentsCount") if p.get("commentsCount") is not None else p.get("comments", 0)))
+            
+            p_timestamp_str = p.get("timestamp") or p.get("date") or ""
+            p_posted_date = "N/A"
+            if p_timestamp_str:
+                try:
+                    clean_t = p_timestamp_str.replace("Z", "+00:00")
+                    if "T" not in clean_t:
+                        clean_t = clean_t[:10] + "T00:00:00+00:00"
+                    p_dt = datetime.fromisoformat(clean_t)
+                    p_posted_date = p_dt.strftime("%d/%m/%Y")
+                except:
+                    p_posted_date = "N/A"
+            
+            p_caption_raw = p.get("caption", "") or ""
+            p_caption_snippet = (p_caption_raw[:97] + "...") if len(p_caption_raw) > 100 else p_caption_raw
+            
+            p_baseline = reels_median_likes if p_is_video else static_median_likes
+            p_perf_status = "WIN" if p_likes > p_baseline else "FIX"
+            
+            # Build a reliable post URL for the leaderboard entry
+            lb_shortcode = p.get("shortCode") or p.get("shortcode") or ""
+            lb_url = p.get("url") or p.get("post_url") or ""
+            if not lb_url and lb_shortcode:
+                lb_url = f"https://www.instagram.com/p/{lb_shortcode}/"
+            if not lb_url or p.get("is_mock"):
+                lb_url = profile_url.rstrip('/')
+            
+            leaderboard_data.append({
+                "post_id": p_id,
+                "post_url": lb_url,
+                "shortcode": lb_shortcode,
+                "thumbnail_url": p_thumb,
+                "is_video": p_is_video,
+                "metrics": {
+                    "likes": p_likes,
+                    "comments": p_comments
+                },
+                "posted_date": p_posted_date,
+                "caption_snippet": p_caption_snippet,
+                "performance_status": p_perf_status
+            })
+
         response_payload = {
             "client_metrics": {
                 "profile_url": profile_url,
@@ -972,7 +1061,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
                 "performance_split": performance_split,
                 "niche_benchmark_data": niche_benchmark_data,
                 "reels_views_distribution": reels_views_distribution,
-                "reach_distribution_data": reach_distribution_data
+                "reach_distribution_data": reach_distribution_data,
+                "leaderboard_data": leaderboard_data
             },
             "competitor_metrics": competitor_metrics_list,
             "reels_views_distribution": reels_views_distribution,
@@ -1004,6 +1094,8 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
         if not has_today:
             trend_history.append({"date": today_str, "follower_count": client_follower_count})
             
+        # We no longer backfill history. It will naturally build up over time.
+
         # Cap to 30 most recent entries
         trend_history = trend_history[-30:]
         response_payload["trend_history"] = trend_history
@@ -1112,26 +1204,9 @@ def fill_distribution_gaps(items, audit_year=2026):
     if not parsed_dict:
         return items
         
-    import hashlib
-    # Find min date from the posts or default to 30 days ago
-    max_dt = max(parsed_dict.keys())
-    min_dt = max_dt - timedelta(days=30)
-    if min(parsed_dict.keys()) < min_dt:
-        min_dt = min(parsed_dict.keys())
-
-    avg_views = sum(parsed_dict.values()) / len(parsed_dict)
-    
     filled = []
-    curr = min_dt
-    while curr <= max_dt:
-        if curr in parsed_dict:
-            filled.append({"date": curr.strftime("%d/%m/%Y"), "views": parsed_dict[curr]})
-        else:
-            # Generate highly realistic continuous baseline noise for non-post days
-            noise_factor = (int(hashlib.md5(curr.isoformat().encode()).hexdigest(), 16) % 100) / 100.0
-            baseline_views = int(avg_views * (0.1 + (noise_factor * 0.2)))
-            filled.append({"date": curr.strftime("%d/%m/%Y"), "views": max(10, baseline_views)})
-        curr += timedelta(days=1)
+    for dt in sorted(parsed_dict.keys()):
+        filled.append({"date": dt.strftime("%d/%m/%Y"), "views": parsed_dict[dt]})
         
     return filled
 

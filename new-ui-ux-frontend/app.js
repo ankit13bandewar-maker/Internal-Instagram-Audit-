@@ -1,17 +1,27 @@
 // CONFIGURATION Constants
 const BACKEND_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
   ? "http://127.0.0.1:8000"
-  : "https://client-audit-tool.onrender.com";
+  : "https://instagram-account-audit-api.onrender.com";
 const SVG_CIRCUMFERENCE = 314.159; // 2 * Math.PI * 50
 
 // APP STATE
 function resolvePostUrl(post) {
   if (!post) return '#';
-  let url = post.post_url || post.url || post.link || post.shortcode || '';
-  if (!url) return '#';
-  if (url.startsWith('http')) return url;
-  if (url.startsWith('/')) return 'https://www.instagram.com' + url;
-  return 'https://www.instagram.com/p/' + url + '/';
+  // Priority 1: explicit post_url or url field (already a full URL)
+  const candidates = [post.post_url, post.url, post.link];
+  for (const c of candidates) {
+    if (c && typeof c === 'string' && c.trim() && c.trim().toLowerCase() !== 'nan') {
+      const trimmed = c.trim();
+      if (trimmed.startsWith('http')) return trimmed;
+      if (trimmed.startsWith('/')) return 'https://www.instagram.com' + trimmed;
+    }
+  }
+  // Priority 2: build from shortcode (but only if it looks real — not a mock hash)
+  const sc = post.shortcode || post.shortCode || '';
+  if (sc && sc.length > 0) {
+    return 'https://www.instagram.com/p/' + sc + '/';
+  }
+  return '#';
 }
 
 function fmtTrendDate(d) {
@@ -31,13 +41,22 @@ async function fetchDynamicThumbnail(post, imgElement) {
   if (!post || !imgElement) return;
   
   const baseUrl = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : 'http://127.0.0.1:8000';
+  const postUrl = resolvePostUrl(post);
   
-  if (post.display_url && !post.display_url.includes('picsum.photos')) {
-    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}&post_url=${encodeURIComponent(resolvePostUrl(post))}`;
+  // If we have a real display_url (not picsum, not empty), proxy it with the post_url as fallback
+  if (post.display_url && post.display_url.trim() && !post.display_url.includes('picsum.photos')) {
+    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(post.display_url)}&post_url=${encodeURIComponent(postUrl)}`;
     return;
   }
   
-  const seed = post.shortcode || post.index || Math.random().toString();
+  // If no display_url but we have a valid Instagram post URL, try to fetch thumbnail via proxy og:image
+  if (postUrl && postUrl !== '#' && (postUrl.includes('/p/') || postUrl.includes('/reel/') || postUrl.includes('/tv/'))) {
+    imgElement.src = baseUrl + `/api/proxy-image?url=${encodeURIComponent(postUrl)}&post_url=${encodeURIComponent(postUrl)}`;
+    return;
+  }
+  
+  // Final fallback: branded placeholder based on post index
+  const seed = post.shortcode || post.index || post.post_id || 'default';
   imgElement.src = `https://picsum.photos/seed/${encodeURIComponent(seed)}/100/100`;
 }
 
@@ -465,13 +484,17 @@ function displayDashboard(rawData) {
       .sort((a, b) => b - a); // descending
 
     if (dates.length > 1) {
-      // Ignore the 3 oldest posts in case they are pinned
-      const recentDates = dates.length > 5 ? dates.slice(0, dates.length - 3) : dates;
-      const daysSpan = (recentDates[0] - recentDates[recentDates.length - 1]) / (1000 * 60 * 60 * 24);
+      // Calculate true calendar days spanned (stripping out time of day)
+      const oldestDate = new Date(dates[dates.length - 1]);
+      oldestDate.setHours(0, 0, 0, 0);
       
-      // Enforce a minimum span of 7 days to smooth out bulk-uploads (e.g. 9 posts in 1 day)
-      const smoothedDaysSpan = Math.max(daysSpan, 7);
-      velocityVal = recentDates.length / smoothedDaysSpan;
+      const newestDate = new Date(dates[0]);
+      newestDate.setHours(0, 0, 0, 0);
+      
+      const exactDaysDifference = Math.round((newestDate - oldestDate) / (1000 * 60 * 60 * 24));
+      const calendarDays = Math.max(exactDaysDifference + 1, 1);
+      
+      velocityVal = dates.length / calendarDays;
     }
   } else if (clientStats.days_per_post && clientStats.days_per_post > 0) {
     velocityVal = 1 / clientStats.days_per_post;
@@ -641,14 +664,14 @@ function renderAllDynamicCharts(rawData) {
 
   // --- Chart 1: Audience Growth Timeline ---
 
-  const recentTrend = trendHistory.slice(-6);
-  const trendPts = recentTrend.length >= 2 ? recentTrend.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
-  const trendLabels = recentTrend.length >= 2 ? recentTrend.map(item => fmtTrendDate(item.date)) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const recentTrend = trendHistory.slice(-7);
+  const trendPts = recentTrend.length >= 1 ? recentTrend.map(item => item.follower_count) : [40, 42, 41, 45, 47, 46, 49, 52, 54, 57, 59, 63];
+  const trendLabels = recentTrend.length >= 1 ? recentTrend.map(item => fmtTrendDate(item.date)) : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   drawChart('chart-growth', trendPts, 'var(--accent)', 148, trendLabels);
 
   // Update growth dates axis-x (bottom labels below chart)
   const growthAxis = document.getElementById('growth-axis-x');
-  if (growthAxis && recentTrend.length >= 2) {
+  if (growthAxis && recentTrend.length >= 1) {
     growthAxis.innerHTML = '';
     recentTrend.forEach(item => {
       const span = document.createElement('span');
@@ -993,13 +1016,17 @@ function renderBestByType(data) {
   const rawBestStatic = staticTop.length > 0 ? staticTop[0] : null;
 
   const posts = data.posts || [];
-  const bestReel = rawBestReel ? posts.find(p => p.index === rawBestReel.index) : null;
-  const bestStatic = rawBestStatic ? posts.find(p => p.index === rawBestStatic.index) : null;
+  // Try to match by index name, but ALWAYS fall back to the raw performance_split data
+  // so that links and thumbnails work even if the match fails
+  const bestReel = rawBestReel ? (posts.find(p => p.index === rawBestReel.index) || rawBestReel) : null;
+  const bestStatic = rawBestStatic ? (posts.find(p => p.index === rawBestStatic.index) || rawBestStatic) : null;
 
   // Helper to build the "View Live Post" link HTML
   const buildLinkHTML = (post) => {
     if (!post) return '<span style="color:var(--faint); font-style:italic;">No posts of this type</span>';
-    return `<a href="${resolvePostUrl(post)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+    const url = resolvePostUrl(post);
+    if (url === '#') return '<span style="color:var(--faint); font-style:italic;">No posts of this type</span>';
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
       View Live Post
       <span class="post-link-btn" style="margin-left: 6px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1694,32 +1721,53 @@ window.drawChart = function (id, pts, stroke, h, labels) {
   }
   var span = (max - min) || 1;
   var n = pts.length;
-  if (n < 2) return;
+  if (n === 0) return;
 
-  var xs = function (i) { return padLeft + (i * (W - padLeft - padRight)) / (n - 1); };
+  var xs = function (i) { 
+    if (n === 1) return padLeft + (W - padLeft - padRight) / 2;
+    return padLeft + (i * (W - padLeft - padRight)) / (n - 1); 
+  };
   var ys = function (v) { return H - padBottom - ((v - min) / span) * (H - padTop - padBottom); };
   var P = pts.map(function (v, i) { return [xs(i), ys(v)]; });
 
-  var d = '';
-  P.forEach(function (p, i) {
-    if (i === 0) { d = 'M' + p[0] + ' ' + p[1]; return; }
-    var p0 = P[i - 1], p1 = p;
-    var pr = P[i - 2] || p0, nx = P[i + 1] || p1;
-    var cx1 = p0[0] + (p1[0] - pr[0]) / 6;
-    var cy1 = p0[1] + (p1[1] - pr[1]) / 6;
-    var cx2 = p1[0] - (nx[0] - p0[0]) / 6;
-    var cy2 = p1[1] - (nx[1] - p0[1]) / 6;
-    d += ' C' + cx1 + ' ' + cy1 + ',' + cx2 + ' ' + cy2 + ',' + p1[0] + ' ' + p1[1];
-  });
-
-  var area = d + ' L' + xs(n - 1) + ' ' + (H - padBottom) + ' L' + xs(0) + ' ' + (H - padBottom) + 'Z';
   var gid = 'g' + (Math.random() * 1e8 | 0).toString(36);
+  var graphElementsHtml = '';
 
-  var circles = P.map(function (p, i) {
-    var last = i === P.length - 1;
-    return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (last ? 4.5 : 3) +
-      '" fill="' + (last ? stroke : 'var(--surf)') + '" stroke="' + stroke + '" stroke-width="2"/>';
-  }).join('');
+  if (n === 1) {
+    var p = P[0];
+    var barWidth = 16;
+    var rx = p[0] - barWidth / 2;
+    var ry = p[1];
+    var rh = Math.max((H - padBottom) - ry, 2);
+    graphElementsHtml = 
+      '<rect x="' + rx + '" y="' + ry + '" width="' + barWidth + '" height="' + rh + '" fill="url(#' + gid + ')" rx="2"/>' +
+      '<line x1="' + rx + '" y1="' + ry + '" x2="' + (rx + barWidth) + '" y2="' + ry + '" stroke="' + stroke + '" stroke-width="3" stroke-linecap="round"/>';
+  } else {
+    var d = '';
+    P.forEach(function (p, i) {
+      if (i === 0) { d = 'M' + p[0] + ' ' + p[1]; return; }
+      var p0 = P[i - 1], p1 = p;
+      var pr = P[i - 2] || p0, nx = P[i + 1] || p1;
+      var cx1 = p0[0] + (p1[0] - pr[0]) / 6;
+      var cy1 = p0[1] + (p1[1] - pr[1]) / 6;
+      var cx2 = p1[0] - (nx[0] - p0[0]) / 6;
+      var cy2 = p1[1] - (nx[1] - p0[1]) / 6;
+      d += ' C' + cx1 + ' ' + cy1 + ',' + cx2 + ' ' + cy2 + ',' + p1[0] + ' ' + p1[1];
+    });
+
+    var area = d + ' L' + xs(n - 1) + ' ' + (H - padBottom) + ' L' + xs(0) + ' ' + (H - padBottom) + 'Z';
+    
+    var circles = P.map(function (p, i) {
+      var last = i === P.length - 1;
+      return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (last ? 4.5 : 3) +
+        '" fill="' + (last ? stroke : 'var(--surf)') + '" stroke="' + stroke + '" stroke-width="2"/>';
+    }).join('');
+
+    graphElementsHtml = 
+      '<path d="' + area + '" fill="url(#' + gid + ')"/>' +
+      '<path d="' + d + '" fill="none" stroke="' + stroke + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      circles;
+  }
 
   function formatYAxis(v) {
     if (v >= 1e6) return (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -1775,9 +1823,7 @@ window.drawChart = function (id, pts, stroke, h, labels) {
     '<stop offset="100%" stop-color="' + stroke + '" stop-opacity="0"/>' +
     '</linearGradient></defs>' +
     gridLinesHtml +
-    '<path d="' + area + '" fill="url(#' + gid + ')"/>' +
-    '<path d="' + d + '" fill="none" stroke="' + stroke + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
-    circles +
+    graphElementsHtml +
     hoverSvg +
     '</svg>';
 

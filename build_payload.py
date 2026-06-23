@@ -53,9 +53,10 @@ document.addEventListener("DOMContentLoaded", function() {
                  
     # Assemble inner HTML for the iframe
     inner_html = f"""<!DOCTYPE html>
-<html>
+<html lang="en" data-palette="lime">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
 {css_content}
 </style>

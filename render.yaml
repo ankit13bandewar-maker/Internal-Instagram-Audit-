@@ -20,4 +20,12 @@ services:
         sync: false
       - key: RAPIDAPI_HOST
         value: instagram-scraper-stable-api.p.rapidapi.com
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+  # 2. Frontend Static Site
+  - type: web
+    env: static
+    name: instagram-account-audit-frontend
+    staticPublishPath: ./new-ui-ux-frontend
 

@@ -15,6 +15,10 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Expires", "0")
         super().end_headers()
 
+    def address_string(self):
+        # Override to prevent extremely slow reverse DNS lookups on Windows
+        return self.client_address[0]
+
     def log_message(self, format, *args):
         print(f"[Server] {self.address_string()} - {format % args}")
 

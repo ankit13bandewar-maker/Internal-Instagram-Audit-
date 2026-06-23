@@ -796,12 +796,16 @@ def calculate_metrics_package(posts: list, follower_count: int) -> dict:
             "likes": best_post.get("likes_count", best_post.get("likes", 0)), 
             "comments": best_post.get("comments_count", best_post.get("comments", 0)), 
             "url": best_post.get("url", best_post.get("post_url", "")),
+            "post_url": best_post.get("url", best_post.get("post_url", "")),
+            "shortcode": best_post.get("shortcode", ""),
             "display_url": best_post.get("display_url", best_post.get("displayUrl", ""))
         },
         "worst_post": {
             "likes": worst_post.get("likes_count", worst_post.get("likes", 0)), 
             "comments": worst_post.get("comments_count", worst_post.get("comments", 0)), 
             "url": worst_post.get("url", worst_post.get("post_url", "")),
+            "post_url": worst_post.get("url", worst_post.get("post_url", "")),
+            "shortcode": worst_post.get("shortcode", ""),
             "display_url": worst_post.get("display_url", worst_post.get("displayUrl", ""))
         }
     }

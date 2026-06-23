@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 /scratch/
 /response.json
+/venv/
+*.log

@@ -462,9 +462,11 @@ def _generate_highly_authentic_posts(profile_url: str) -> list:
             "timestamp": timestamp,
             "type": post_type,
             "caption": caption,
-            "url": f"https://www.instagram.com/p/{shortcode}/",
-            "shortcode": shortcode,
-            "displayUrl": f"https://picsum.photos/100/100?random={i}",
+            # Permanent fix: mock posts link to the profile page instead of a fake shortcode URL
+            # that would 404 on Instagram. The shortcode is kept empty to signal "no real post".
+            "url": f"https://www.instagram.com/{username}/",
+            "shortcode": "",
+            "displayUrl": "",
             "videoPlayCount": video_play_count,
             "productType": product_type,
             "is_mock": True,
@@ -725,7 +727,7 @@ def scrape_latest_15_posts(profile_url: str, date_from: str = None, date_to: str
         try:
             public_api_posts = _scrape_via_instagram_api(profile_url)
             print(f"[IG API] Got {len(public_api_posts)} non-pinned posts for '{username}'.")
-            if public_api_posts and len(public_api_posts) >= 15:
+            if public_api_posts and len(public_api_posts) >= 9:
                 _save_to_csv(profile_url, public_api_posts)
                 return public_api_posts[:MAX_POSTS]
         except FileNotFoundError as e:
