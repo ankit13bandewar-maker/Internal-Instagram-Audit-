@@ -1144,6 +1144,22 @@ def get_audit_status(job_id: str):
                 
     return job
 
+@app.get("/api/delete-history/{username}")
+def delete_history(username: str):
+    try:
+        with open(HISTORY_DB_PATH, "r", encoding="utf-8") as f:
+            history_db = json.load(f)
+    except:
+        return {"status": "error", "message": "DB read error"}
+    
+    uname = username.lower()
+    if uname in history_db:
+        del history_db[uname]
+        with open(HISTORY_DB_PATH, "w", encoding="utf-8") as f:
+            json.dump(history_db, f)
+        return {"status": "success", "deleted": uname}
+    return {"status": "not_found", "message": f"{uname} not found"}
+
 @app.get("/api/history-list")
 def get_history_list():
     try:
