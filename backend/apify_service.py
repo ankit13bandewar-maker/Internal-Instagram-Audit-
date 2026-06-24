@@ -242,6 +242,9 @@ def get_real_follower_count(handle: str, fallback_calc: int) -> int:
                 val = int(fstr.strip())
                 if val > 0:
                     return val
+    except Exception:
+        pass
+
     # Method 4: Apify detail scraper (extremely reliable fallback)
     try:
         import os
