@@ -1196,18 +1196,15 @@ def get_audit_status(job_id: str):
             except Exception:
                 pass
                 
-        if "reels_views_distribution" in payload:
-            payload["reels_views_distribution"] = fill_distribution_gaps(payload["reels_views_distribution"], audit_year)
         if "reach_distribution_data" in payload:
             payload["reach_distribution_data"] = fill_distribution_gaps(payload["reach_distribution_data"], audit_year)
             
         client_metrics = payload.get("client_metrics")
         if isinstance(client_metrics, dict):
-            if "reels_views_distribution" in client_metrics:
-                client_metrics["reels_views_distribution"] = fill_distribution_gaps(client_metrics["reels_views_distribution"], audit_year)
             if "reach_distribution_data" in client_metrics:
                 client_metrics["reach_distribution_data"] = fill_distribution_gaps(client_metrics["reach_distribution_data"], audit_year)
                 
+    return job
     return job
 
 @app.get("/api/delete-history/{username}")
