@@ -242,8 +242,25 @@ def get_real_follower_count(handle: str, fallback_calc: int) -> int:
                 val = int(fstr.strip())
                 if val > 0:
                     return val
-    except Exception:
-        pass
+    # Method 4: Apify detail scraper (extremely reliable fallback)
+    try:
+        import os
+        from apify_client import ApifyClient
+        token = os.getenv("APIFY_API_TOKEN")
+        if token:
+            client = ApifyClient(token)
+            run = client.actor("apify/instagram-scraper").call(run_input={
+                "directUrls": [f"https://www.instagram.com/{handle}/"],
+                "resultsType": "details",
+                "resultsLimit": 1
+            })
+            items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+            if items:
+                count = items[0].get("followersCount")
+                if count is not None and int(count) > 0:
+                    return int(count)
+    except Exception as e:
+        print(f"Apify detail fallback failed: {e}")
 
     return fallback_calc
 

@@ -195,8 +195,25 @@ def get_real_follower_count(handle: str, fallback_calc: int) -> int:
                 val = int(fstr.strip())
                 if val > 0:
                     return val
-    except Exception:
-        pass
+    # Method 4: Apify detail scraper (extremely reliable fallback)
+    try:
+        import os
+        from apify_client import ApifyClient
+        token = os.getenv("APIFY_API_TOKEN")
+        if token:
+            client = ApifyClient(token)
+            run = client.actor("apify/instagram-scraper").call(run_input={
+                "directUrls": [f"https://www.instagram.com/{handle}/"],
+                "resultsType": "details",
+                "resultsLimit": 1
+            })
+            items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+            if items:
+                count = items[0].get("followersCount")
+                if count is not None and int(count) > 0:
+                    return int(count)
+    except Exception as e:
+        print(f"Apify detail fallback failed: {e}")
 
     return fallback_calc
 
@@ -450,12 +467,40 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
         handle_hash = int(hashlib.md5(profile_url.encode()).hexdigest(), 16)
         multiplier = 12 + (handle_hash % 34)
         calculated_fallback = int(average_likes * multiplier) if average_likes > 0 else 5000000
-        
+
+        # Read from history_db if available to prevent sudden drop in followers
+        last_known_followers = None
+        try:
+            with open(HISTORY_DB_PATH, "r") as f:
+                history_db = json.load(f)
+            existing_profile = history_db.get(handle, {})
+            if "follower_count" in existing_profile and existing_profile["follower_count"] > 0:
+                last_known_followers = existing_profile["follower_count"]
+            elif "trend_history" in existing_profile and len(existing_profile["trend_history"]) > 0:
+                # Use max from recent history to avoid propagating a previous crash
+                recent_counts = [entry.get("follower_count", 0) for entry in existing_profile["trend_history"]]
+                last_known_followers = max(recent_counts) if recent_counts else None
+        except:
+            pass
+
+        if last_known_followers and last_known_followers > 0:
+            calculated_fallback = last_known_followers
+
         # Avoid redundant API call if we already extracted exact follower count during scraping
+        client_follower_count = None
         if raw_posts and raw_posts[0].get("ownerFollowerCount"):
-            client_follower_count = raw_posts[0].get("ownerFollowerCount")
-        else:
+            count_from_posts = raw_posts[0].get("ownerFollowerCount")
+            if raw_posts[0].get("is_mock") and last_known_followers:
+                client_follower_count = last_known_followers
+            else:
+                client_follower_count = count_from_posts
+                
+        if not client_follower_count:
             client_follower_count = get_real_follower_count(handle, calculated_fallback)
+            
+        # Extra safety: never let follower count drop by more than 50% suddenly
+        if last_known_followers and client_follower_count < last_known_followers * 0.5:
+            client_follower_count = last_known_followers
         
         client_calc = calculate_metrics_package(parsed_posts, client_follower_count)
 
@@ -1076,11 +1121,29 @@ def run_live_apify_competitor_audit(job_id: str, profile_url: str, date_from: st
         
         if len(trend_history) == 0:
             trend_history = []
+
+        # Clean up corrupted drops in trend_history
+        cleaned_history = []
+        last_good = None
+        for entry in trend_history:
+            count = entry.get("follower_count", 0)
+            if last_good and count < last_good * 0.5:
+                # Corrupted drop detected, use last_good
+                entry["follower_count"] = last_good
+            else:
+                last_good = max(last_good or 0, count)
+            cleaned_history.append(entry)
+        trend_history = cleaned_history
         
         # Check if today's date already exists
         has_today = any(entry.get("date") == today_str for entry in trend_history)
         if not has_today:
             trend_history.append({"date": today_str, "follower_count": client_follower_count})
+        else:
+            # Update today's entry with the new (potentially cleaned) count
+            for entry in trend_history:
+                if entry.get("date") == today_str:
+                    entry["follower_count"] = client_follower_count
             
         # We no longer backfill history. It will naturally build up over time.
 
